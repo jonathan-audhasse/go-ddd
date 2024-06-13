@@ -1,0 +1,11 @@
+#!/usr/bin/env zsh
+
+# run tests
+test() {
+    go test ./...
+}
+
+# formatter
+fmt() {
+    go fmt ./...
+}
