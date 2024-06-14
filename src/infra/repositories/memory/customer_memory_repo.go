@@ -50,3 +50,11 @@ func (mr *CustomerMemoryRepository) List() ([]models.Customer, error) {
 	}
 	return cc, nil
 }
+
+// Empty customers
+func (mr *CustomerMemoryRepository) Delete() error {
+	for k := range mr.customers {
+		delete(mr.customers, k)
+	}
+	return nil
+}

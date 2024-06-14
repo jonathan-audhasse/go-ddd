@@ -1,7 +1,9 @@
 package controller
 
 import (
+	"errors"
 	"goddd/src/domain/models"
+	"goddd/src/domain/repository"
 	"goddd/src/services"
 	"net/http"
 
@@ -16,16 +18,6 @@ func NewCustomerClt(serv *services.CustomerService) (*CustomerCtl, error) {
 	return &CustomerCtl{service: serv}, nil
 }
 
-// func responseValue(word models.Customer) any {
-// 	resBody := struct {
-// 		Customer *string `json:"word"`
-// 	}{nil}
-// 	if !word.IsNil() {
-// 		resBody.Customer = &word.Value
-// 	}
-// 	return resBody
-// }
-
 func (clt *CustomerCtl) ListCustomers(c *gin.Context) {
 	customers, err := clt.service.ListCustomers()
 	if err != nil {
@@ -35,21 +27,19 @@ func (clt *CustomerCtl) ListCustomers(c *gin.Context) {
 	c.JSON(http.StatusOK, customers)
 }
 
-// func (clt *CustomerCtl) GetCustomer(c *gin.Context) {
-// 	// checking input
-// 	if !c.Request.URL.Query().Has("prefix") {
-// 		// missing prefix
-// 		c.JSON(http.StatusBadRequest, gin.H{"message": "missing 'prefix' parameter"})
-// 		return
-// 	}
-// 	prefix := c.Query("prefix")
-// 	w, err := clt.service.GetCustomerFrom(prefix)
-// 	if err != nil {
-// 		handleErr(c, err)
-// 		return
-// 	}
-// 	c.JSON(http.StatusOK, responseValue(w))
-// }
+func (clt *CustomerCtl) GetCustomer(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "'id' should not be empty"})
+		return
+	}
+	customer, err := clt.service.GetCustomer(id)
+	if err != nil {
+		handleErr(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, customer)
+}
 
 // func (clt *CustomerCtl) AddCustomer(c *gin.Context) {
 // 	// checking request body
@@ -74,9 +64,16 @@ func (clt *CustomerCtl) ListCustomers(c *gin.Context) {
 
 // simple error handler
 func handleErr(c *gin.Context, err error) {
+	if werr := errors.Unwrap(err); werr != nil {
+		handleErr(c, werr)
+	}
 	switch err {
 	case models.ErrInvalidCustomer:
+		// invalid customer
 		c.JSON(http.StatusUnprocessableEntity, gin.H{"message": err.Error()})
+	case repository.ErrNotFound:
+		// item not found in repository
+		c.JSON(http.StatusNotFound, gin.H{"message": err.Error()})
 	default:
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "error not handled: oops!"})
 	}

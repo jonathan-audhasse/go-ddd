@@ -27,8 +27,9 @@ func NewRouter(services *services.Services) *gin.Engine {
 		log.Fatal(err)
 	}
 	r.GET("/customers", custCtl.ListCustomers)
-	// r.POST("/customer/:id", wordsApi.AddWord)
+	r.GET("/customers/:id", custCtl.GetCustomer)
 
+	// healthcheck
 	r.GET("/health", controller.Health)
 
 	return r

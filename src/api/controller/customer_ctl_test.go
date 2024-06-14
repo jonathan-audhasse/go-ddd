@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	"fmt"
 	"goddd/src/domain/models"
 	"goddd/src/infra/repositories/memory"
 	"goddd/src/services"
@@ -31,13 +32,13 @@ import (
 // }
 
 // You can use *testing.T, if you want to test the code without benchmarking
-func setupTest(tb testing.TB, method, url string, handler gin.HandlerFunc, body io.Reader) (*httptest.ResponseRecorder, func(testing.TB)) {
+func setupTest(tb testing.TB, method, relativePath, url string, handler gin.HandlerFunc, body io.Reader) *httptest.ResponseRecorder {
 	log.Println("setup test")
 
 	// set up engine
 	r := gin.Default()
 	// r.GET(url, handler) == r.Handle("GET", url, handler)
-	r.Handle(method, url, handler)
+	r.Handle(method, relativePath, handler)
 
 	// set up the request recorder
 	// http.POST(url, body) == htt.NewRequest("POST", url, body)
@@ -49,46 +50,97 @@ func setupTest(tb testing.TB, method, url string, handler gin.HandlerFunc, body 
 	r.ServeHTTP(rec, req)
 
 	// return the response recorder
-	return rec, func(testing.TB) {
+	return rec
+}
+
+func addCustomers(repo *memory.CustomerMemoryRepository, customers []models.Customer) func(testing.TB) {
+	// add customers
+	for _, c := range customers {
+		repo.Add(c)
+	}
+
+	return func(tb testing.TB) {
+		// empty repo
+		assert.NoError(tb, repo.Delete(), "no error expected")
 		log.Println("teardown test")
 	}
 }
 
 func TestCustomerCtl_ListCustomer(t *testing.T) {
-	repo :=  memory.NewCustomerMemoryRepository()
+	repo := memory.NewCustomerMemoryRepository()
 	service, err := services.NewCustomerService(repo)
 	if err != nil {
 		t.Fatal(err)
 	}
-	ctl := &CustomerCtl{service}
 	testCases := []struct {
-			customersInRepo []models.Customer
-			name       string
-			expRes     []map[string]string
-		}{
-			{
-				customersInRepo: []models.Customer{},
-				name:       "list customers (empty repository)",
-				expRes:     []map[string]string{},
-			},
-			{
-				customersInRepo: []models.Customer{{ID: "an_ID", Name: "Johnny", Email: "a@b.c"}},
-				name:       "list customers with a single customer",
-				expRes:     []map[string]string{{"id": "an_ID", "name": "Johnny", "email": "a@b.c"}},
-			},
-		}
+		customers []models.Customer
+		name      string
+		expRes    []map[string]string
+	}{
+		{
+			customers: []models.Customer{},
+			name:      "list customers (empty repository)",
+			expRes:    []map[string]string{},
+		},
+		{
+			customers: []models.Customer{{ID: "an_ID", Name: "Johnny", Email: "a@b.c"}},
+			name:      "list customers with a single customer",
+			expRes:    []map[string]string{{"id": "an_ID", "name": "Johnny", "email": "a@b.c"}},
+		},
+	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			for _, c := range tc.customersInRepo {
-				repo.Add(c)
-			}
-			rec, tearDown := setupTest(t, http.MethodGet, "/customers", ctl.ListCustomers, nil)
-			defer tearDown(t)
+			// populate repo
+			defer addCustomers(repo, tc.customers)(t)
+
+			rec := setupTest(t, http.MethodGet, "/customers", "/customers", (&CustomerCtl{service}).ListCustomers, nil)
 
 			// check status code
 			assert.Equal(t, http.StatusOK, rec.Code)
 			res := make([]map[string]string, 0)
+
+			if assert.NoError(t, json.NewDecoder(rec.Body).Decode(&res), "unexpected error") {
+				assert.Equal(t, tc.expRes, res)
+			}
+		})
+	}
+}
+
+func TestCustomerCtl_GetCustomer(t *testing.T) {
+	repo := memory.NewCustomerMemoryRepository()
+	service, err := services.NewCustomerService(repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer addCustomers(repo, []models.Customer{{ID: "an_ID", Name: "Johnny", Email: "a@b.c"}})(t)
+	testCases := []struct {
+		name      string
+		id        string
+		statusCode int
+		expRes    map[string]string
+	}{
+		{
+			name:      "get customer (ID not found)",
+			id:        "unknow_id",
+			statusCode: http.StatusNotFound,
+			expRes:    map[string]string{"message": "the item was not found in the repository"},
+		},
+		{
+			name:      "get customer (ID ok)",
+		 	id:        "an_ID",
+		 	statusCode: http.StatusOK,
+			expRes:    map[string]string{"id": "an_ID", "name": "Johnny", "email": "a@b.c"},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			rec := setupTest(t, http.MethodGet, "/customers/:id", fmt.Sprintf("/customers/%v", tc.id), (&CustomerCtl{service}).GetCustomer, nil)
+
+			// check status code
+			assert.Equal(t, tc.statusCode, rec.Code)
+			res := make(map[string]string)
 
 			if assert.NoError(t, json.NewDecoder(rec.Body).Decode(&res), "unexpected error") {
 				assert.Equal(t, tc.expRes, res)
