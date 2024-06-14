@@ -44,7 +44,7 @@ func (mr *CustomerMemoryRepository) Add(cust models.Customer) error {
 
 // List customers
 func (mr *CustomerMemoryRepository) List() ([]models.Customer, error) {
-	var cc []models.Customer
+	cc := make([]models.Customer, 0) 
 	for _, cust := range mr.customers {
 		cc = append(cc, cust)
 	}

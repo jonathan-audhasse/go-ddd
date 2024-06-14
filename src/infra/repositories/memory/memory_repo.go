@@ -1,11 +1,10 @@
 package memory
 
-// Memory repositories
-type MemoryRepositories struct {
-	CustRepo *CustomerMemoryRepository
-}
+import (
+	"goddd/src/domain/repository"
+)
 
 // Factory
-func NewMemoryRepositories() *MemoryRepositories {
-	return &MemoryRepositories{CustRepo: NewCustomerMemoryRepository()}
+func NewMemoryRepository() *repository.Repository {
+	return &repository.Repository{CustomerRepo: NewCustomerMemoryRepository()}
 }

@@ -10,10 +10,10 @@ type Services struct {
 }
 
 // Factory
-func NewServices(custRepo repository.CustomerRepository) (*Services, error) {
-	cService, err := NewCustomerService(custRepo)
+func NewServices(repo *repository.Repository) (*Services, error) {
+	custService, err := NewCustomerService(repo.CustomerRepo)
 	if err != nil {
 		return &Services{}, fmt.Errorf("services error : Customer services not initialize")
 	}
-	return &Services{CustService: cService}, nil
+	return &Services{CustService: custService}, nil
 }

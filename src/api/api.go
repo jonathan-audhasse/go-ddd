@@ -8,31 +8,23 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func Run() {
+type Api struct {
+	router *gin.Engine
+	cfg Config
+}
+
+func NewApi() Api {
 	// init all repositories
-	repo := memory.NewMemoryRepositories()
+	repo := memory.NewMemoryRepository()
 	// init services
-	_, err := services.NewServices(repo.CustRepo)
+	services, err := services.NewServices(repo)
 	if err != nil {
 		log.Panic(err)
 	}
+	return Api{router: NewRouter(services), cfg: NewConfig()}
+}
 
-	// init apis
-	// custApi, err := NewCustomerApi(services.CustService)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	r := gin.Default()
-	r.Use(Cors()) //For CORS
-
-	// routes
-	// r.POST("/service", wordsApi.AddWord)
-	// r.GET("/service", wordsApi.GetWordFromPrefix)
-
-	r.GET("/health", Health)
-
+func (a Api) Run() {
 	// //Starting the application
-	log.Fatal(r.Run(":" + apiPort))
-	log.Println("Hello Jonathan")
+	log.Fatal(a.router.Run(":" + a.cfg.Port))
 }

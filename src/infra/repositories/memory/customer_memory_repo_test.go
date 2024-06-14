@@ -9,7 +9,7 @@ import (
 
 func TestCustomerMemoryRepo_GetCustomer(t *testing.T) {
 	// Create a fake customer to add to repository
-	cust := models.Customer{ID: "an_ID", Name: "Johnny"}
+	cust := models.Customer{ID: "an_ID", Name: "Johnny", Email: "a@b.c"}
 	// Create the repo to use, and add some test Data to it for testing
 	// Skip Factory for this
 	mr := CustomerMemoryRepository{
