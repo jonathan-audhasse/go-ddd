@@ -28,6 +28,7 @@ func NewRouter(services *services.Services) *gin.Engine {
 	}
 	r.GET("/customers", custCtl.ListCustomers)
 	r.GET("/customers/:id", custCtl.GetCustomer)
+	r.POST("/customers/", custCtl.AddCustomer)
 
 	// healthcheck
 	r.GET("/health", controller.Health)

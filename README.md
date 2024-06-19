@@ -2,7 +2,7 @@
 DDD design pattern in go
 
 ## TODO
-- [ ] Handle error
+- [x] Handle errors
 - [ ] gracefull shutdown
 - [ ] Postgres
 - [ ] finish product

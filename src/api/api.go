@@ -10,7 +10,7 @@ import (
 
 type Api struct {
 	router *gin.Engine
-	cfg Config
+	cfg    Config
 }
 
 func NewApi() Api {

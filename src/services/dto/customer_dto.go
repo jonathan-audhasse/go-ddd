@@ -6,7 +6,7 @@ import (
 )
 
 type CustomerDTO struct {
-	Name  string `json:"name"`
+	Name  string `json:"name" binding:"required"`
 	Email string `json:"email"`
 }
 

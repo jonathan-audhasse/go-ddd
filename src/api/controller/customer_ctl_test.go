@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"goddd/src/domain/models"
@@ -115,22 +116,22 @@ func TestCustomerCtl_GetCustomer(t *testing.T) {
 	}
 	defer addCustomers(repo, []models.Customer{{ID: "an_ID", Name: "Johnny", Email: "a@b.c"}})(t)
 	testCases := []struct {
-		name      string
-		id        string
+		name       string
+		id         string
 		statusCode int
-		expRes    map[string]string
+		expRes     map[string]any
 	}{
 		{
-			name:      "get customer (ID not found)",
-			id:        "unknow_id",
+			name:       "get customer (ID not found)",
+			id:         "unknow_id",
 			statusCode: http.StatusNotFound,
-			expRes:    map[string]string{"message": "the item was not found in the repository"},
+			expRes:     map[string]any{"errorId": float64(3000), "message": "(3000) fail to get customer (id=unknow_id): customer (id=unknow_id) not found in repository"},
 		},
 		{
-			name:      "get customer (ID ok)",
-		 	id:        "an_ID",
-		 	statusCode: http.StatusOK,
-			expRes:    map[string]string{"id": "an_ID", "name": "Johnny", "email": "a@b.c"},
+			name:       "get customer (ID ok)",
+			id:         "an_ID",
+			statusCode: http.StatusOK,
+			expRes:     map[string]any{"id": "an_ID", "name": "Johnny", "email": "a@b.c"},
 		},
 	}
 
@@ -140,7 +141,7 @@ func TestCustomerCtl_GetCustomer(t *testing.T) {
 
 			// check status code
 			assert.Equal(t, tc.statusCode, rec.Code)
-			res := make(map[string]string)
+			res := make(map[string]any)
 
 			if assert.NoError(t, json.NewDecoder(rec.Body).Decode(&res), "unexpected error") {
 				assert.Equal(t, tc.expRes, res)
@@ -149,7 +150,61 @@ func TestCustomerCtl_GetCustomer(t *testing.T) {
 	}
 }
 
-// // POST /service Test
+func TestCustomerCtl_AddCustomer(t *testing.T) {
+	repo := memory.NewCustomerMemoryRepository()
+	service, err := services.NewCustomerService(repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	testCases := []struct {
+		name       string
+		body       map[string]string
+		statusCode int
+		expRes     map[string]any
+	}{
+		{
+			name:       "add customer (empty body)",
+			body:       map[string]string{},
+			statusCode: http.StatusBadRequest,
+			expRes:     map[string]any{"errorId": float64(2000), "message": "customer body should contain at least a name"},
+		},
+		{
+			name:       "add customer OK",
+			body:       map[string]string{"name": "Johnny", "email": "a@b.c"},
+			statusCode: http.StatusCreated,
+			expRes:     map[string]any{"name": "Johnny", "email": "a@b.c"},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			jsonCust, _ := json.Marshal(tc.body)
+			// var b bytes.Buffer // use &b as *io.Reader
+			// json.NewEncoder(b).Encode(tc.body)
+			rec := setupTest(t, http.MethodPost, "/customers", "/customers", (&CustomerCtl{service}).AddCustomer, bytes.NewBuffer(jsonCust))
+
+			// check status code
+			assert.Equal(t, tc.statusCode, rec.Code)
+			res := make(map[string]any)
+
+			if assert.NoError(t, json.NewDecoder(rec.Body).Decode(&res), "unexpected error") {
+				switch tc.statusCode {
+				case http.StatusCreated:
+					assert.Contains(t, res, "id")
+					assert.Equal(t, tc.expRes["name"], res["name"])
+					assert.Equal(t, tc.expRes["email"], res["email"])
+					ll, _ := repo.List()
+					assert.Len(t, ll, 1)
+				default:
+					// error
+					assert.Equal(t, tc.expRes, res)
+				}
+			}
+		})
+	}
+}
+
+// POST /service Test
 // func TestWordApi_AddWord(t *testing.T) {
 // 	repo := memory.NewWordMemoryRepository()
 // 	service, err := services.NewWordService(repo)

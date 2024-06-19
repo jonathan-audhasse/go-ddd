@@ -1,10 +1,11 @@
 package memory
 
 import (
-	"errors"
 	"goddd/src/domain/models"
-	"goddd/src/domain/repository"
+	"goddd/src/pkg/errors"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCustomerMemoryRepo_GetCustomer(t *testing.T) {
@@ -17,18 +18,19 @@ func TestCustomerMemoryRepo_GetCustomer(t *testing.T) {
 	}
 
 	testCases := []struct {
-		name        string
-		id          string
-		expectedErr error
+		name   string
+		id     string
+		expErr error
 	}{
 		{
-			name:        "No Customer By ID",
-			id:          "another_ID",
-			expectedErr: repository.ErrNotFound,
-		}, {
-			name:        "Customer By ID",
-			id:          cust.ID,
-			expectedErr: nil,
+			name:   "Customer not found",
+			id:     "another_ID",
+			expErr: errors.RepoItemNotFound.New("customer (id=another_ID) not found"),
+		},
+		{
+			name:   "Customer Ok",
+			id:     cust.ID,
+			expErr: nil,
 		},
 	}
 
@@ -36,11 +38,7 @@ func TestCustomerMemoryRepo_GetCustomer(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 
 			_, err := mr.Get(tc.id)
-			// error must be wrapped
-			uerr := errors.Unwrap(err)
-			if uerr != tc.expectedErr {
-				t.Errorf("Expected error %v, got %v", tc.expectedErr, err)
-			}
+			assert.Equal(t, err, tc.expErr)
 		})
 	}
 }

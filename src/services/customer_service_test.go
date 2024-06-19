@@ -1,9 +1,9 @@
 package services
 
 import (
-	"errors"
 	"fmt"
 	"goddd/src/domain/models"
+	"goddd/src/pkg/errors"
 	"goddd/src/services/dto"
 	"testing"
 
@@ -56,6 +56,8 @@ func TestCustomerServices(t *testing.T) {
 				return []models.Customer{}, mokcErr
 			}
 			_, err := services.ListCustomers()
+			assert.Equal(t, errors.GetID(err), errors.NoID)
+			assert.EqualError(t, err, "fail to list customers")
 			uerr := errors.Unwrap(err)
 			assert.NotNil(t, uerr, "error should be wrapped")
 			assert.ErrorIsf(t, mokcErr, uerr, "errors should be equals")
@@ -76,6 +78,8 @@ func TestCustomerServices(t *testing.T) {
 				return models.Customer{}, mokcErr
 			}
 			_, err := services.GetCustomer("an_ID")
+			assert.Equal(t, errors.GetID(err), errors.NoID)
+			assert.EqualError(t, err, "fail to get customer (id=an_ID)")
 			uerr := errors.Unwrap(err)
 			assert.NotNil(t, uerr, "error should be wrapped")
 			assert.ErrorIsf(t, mokcErr, uerr, "errors should be equals")
@@ -95,15 +99,19 @@ func TestCustomerServices(t *testing.T) {
 		custToAdd := dto.CustomerDTO{Name: "Johnny", Email: "a@b.c"}
 		t.Run("name should not be empty", func(t *testing.T) {
 			_, err := services.AddCustomer(dto.CustomerDTO{})
+			assert.Equal(t, errors.GetID(err), errors.InvalidFormat)
+			assert.EqualError(t, err, "fail to add customer")
 			uerr := errors.Unwrap(err)
 			assert.NotNil(t, uerr, "error should be wrapped")
-			assert.ErrorIsf(t, models.ErrInvalidCustomer, uerr, "invalid customer should be return here")
+			assert.Equal(t, errors.InvalidFormat.New("customer name should not be empty"), uerr, "invalid customer should be return here")
 		})
 		t.Run("name should not be empty", func(t *testing.T) {
 			repo.mockAdd = func(c models.Customer) error {
 				return mokcErr
 			}
 			_, err := services.AddCustomer(custToAdd)
+			assert.Equal(t, errors.GetID(err), errors.NoID)
+			assert.EqualError(t, err, "fail to add customer")
 			uerr := errors.Unwrap(err)
 			assert.NotNil(t, uerr, "error should be wrapped")
 			assert.ErrorIsf(t, mokcErr, uerr, "errors should be equals")

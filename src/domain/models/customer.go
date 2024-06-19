@@ -1,8 +1,8 @@
 package models
 
 import (
-	"errors"
 	"fmt"
+	"goddd/src/pkg/errors"
 
 	"github.com/google/uuid"
 )
@@ -17,14 +17,9 @@ type Customer struct {
 	Email string `json:"email"`
 }
 
-var (
-	// ErrInvalidCustomer is returned when customer's name is empty
-	ErrInvalidCustomer = errors.New("a customer has to have an valid person")
-)
-
 func NewCustomer(name, email string) (Customer, error) {
 	if name == "" {
-		return Customer{}, ErrInvalidCustomer
+		return Customer{}, errors.InvalidFormat.New("customer name should not be empty")
 	}
-	return Customer{ID: fmt.Sprintf("cust_%s", uuid.NewString()), Name: name, Email: email}, nil
+	return Customer{ID: fmt.Sprintf("cust_%s", uuid.NewString()[:8]), Name: name, Email: email}, nil
 }

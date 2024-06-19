@@ -1,9 +1,8 @@
 package memory
 
 import (
-	"fmt"
 	"goddd/src/domain/models"
-	"goddd/src/domain/repository"
+	"goddd/src/pkg/errors"
 	"sync"
 )
 
@@ -23,7 +22,7 @@ func (mr *CustomerMemoryRepository) Get(id string) (models.Customer, error) {
 	if cust, ok := mr.customers[id]; ok {
 		return cust, nil
 	}
-	return models.Customer{}, fmt.Errorf("customer %v not found %w", id, repository.ErrNotFound)
+	return models.Customer{}, errors.RepoItemNotFound.Newf("customer (id=%v) not found in repository", id)
 }
 
 // Add will add a new customer to the repository
@@ -34,7 +33,7 @@ func (mr *CustomerMemoryRepository) Add(cust models.Customer) error {
 		mr.Unlock()
 	}
 	if _, ok := mr.customers[cust.ID]; ok {
-		return fmt.Errorf("fail to add a new customer %w", repository.ErrFailedToAdd)
+		return errors.InternalError.Newf("fail to add a new customer %v", cust)
 	}
 	mr.Lock()
 	mr.customers[cust.ID] = cust
@@ -44,7 +43,7 @@ func (mr *CustomerMemoryRepository) Add(cust models.Customer) error {
 
 // List customers
 func (mr *CustomerMemoryRepository) List() ([]models.Customer, error) {
-	cc := make([]models.Customer, 0) 
+	cc := make([]models.Customer, 0)
 	for _, cust := range mr.customers {
 		cc = append(cc, cust)
 	}
