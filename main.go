@@ -5,5 +5,5 @@ import (
 )
 
 func main() {
-	api.NewApi().Run()
+	api.NewApi().Serve()
 }

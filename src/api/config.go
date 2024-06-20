@@ -1,28 +1,20 @@
 package api
 
 import (
-	"os"
+	"context"
+	"log"
+
+	"github.com/sethvargo/go-envconfig"
 )
 
 type Config struct {
-	Port string `envconfig:"PORT" default:"8080"`
-}
-
-func getEnvDefault(key, def string) string {
-	env := os.Getenv(key)
-	if len(env) != 0 {
-		return env
-	}
-	return def
+	Port int `env:"PORT, default=8000"`
 }
 
 func NewConfig() Config {
-	cfg := Config{
-		Port: getEnvDefault("API_PORT", "8000"),
+	var cfg Config
+	if err := envconfig.Process(context.Background(), &cfg); err != nil {
+		log.Fatal(err)
 	}
-
-	// if err := envconfig.Process("", &cfg); err != nil {
-	// 	log.Fatalf("parseConfigError: %v", err)
-	// }
 	return cfg
 }

@@ -25,7 +25,7 @@ func TestCustomerMemoryRepo_GetCustomer(t *testing.T) {
 		{
 			name:   "Customer not found",
 			id:     "another_ID",
-			expErr: errors.RepoItemNotFound.New("customer (id=another_ID) not found"),
+			expErr: errors.RepoItemNotFound.New("customer (id=another_ID) not found in repository"),
 		},
 		{
 			name:   "Customer Ok",

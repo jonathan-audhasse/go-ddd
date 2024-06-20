@@ -21,11 +21,13 @@ func NewRouter(services *services.Services) *gin.Engine {
 		})
 	})
 
-	// customers route
+	// controllers
 	custCtl, err := controller.NewCustomerClt(services.CustService)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// routes
 	r.GET("/customers", custCtl.ListCustomers)
 	r.GET("/customers/:id", custCtl.GetCustomer)
 	r.POST("/customers/", custCtl.AddCustomer)
