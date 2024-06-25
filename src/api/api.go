@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 )
 
 type Api struct {
@@ -22,7 +24,7 @@ type Api struct {
 
 func NewApi() Api {
 	// init all repositories
-	repo := memory.NewMemoryRepository()
+	repo := memory.NewRepository()
 	// init services
 	services, err := services.NewServices(repo)
 	if err != nil {
@@ -32,8 +34,8 @@ func NewApi() Api {
 }
 
 // server
-func (a Api) Serve() {
-	// server 
+func (a Api) ServeBis() {
+	// server
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%d", a.cfg.Port),
 		Handler: a.router.Handler(),
@@ -42,7 +44,7 @@ func (a Api) Serve() {
 	// it won't block the graceful shutdown handling below
 	go func() {
 		log.Printf("Listen server (port %s)...\n", srv.Addr)
-		if err :=  srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("listen: %s\n", err)
 		}
 	}()
@@ -63,4 +65,27 @@ func (a Api) Serve() {
 		log.Fatal("Server forced to shutdown:", err)
 	}
 	log.Println("Server exiting")
+}
+
+type Cust struct {
+	Id    string
+	Email string
+	Name  string `db:"name"`
+}
+
+func (a Api) Serve() {
+	db, err := sqlx.Connect("postgres", a.cfg.DbUrl())
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "\nUnable to connect to database: %v\n", err)
+		os.Exit(1)
+	}
+	defer db.Close()
+	fmt.Printf("connected. db=%v\n", db)
+	var data Cust
+	if err := db.Get(&data, "select * from customer"); err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Printf("%T\n%v\n%#v", data, data, data)
 }

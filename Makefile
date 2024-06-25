@@ -18,8 +18,6 @@ help: ## show this help message
 #  Variables  #
 #-------------#
 
-SERVER_NAME=server
-
 #------------------#
 #  Common targets  #
 #------------------#
@@ -35,7 +33,7 @@ clean:
 #------------------#
 
 up: ## mount services
-	docker compose up -d ${SERVER_NAME}
+	docker compose up -d
 
 down: ## stop and Remove all mounted services
 	docker compose down --remove-orphans
@@ -46,7 +44,7 @@ down: ## stop and Remove all mounted services
 
 test: up ## run tests
 	$(call info, "TODO set tests")
-	docker compose run --rm --no-deps --entrypoint=go ${SERVER_NAME} test ./...
+	docker compose run --rm --no-deps --entrypoint=go server test ./...
 
 #-----------#
 #  Helpers  #
@@ -55,7 +53,7 @@ test: up ## run tests
 pkg := $(shell go list ./...)
 
 logs: ## visualize the last 100 docker logs
-	docker compose logs ${SERVER_NAME} | tail -100
+	docker compose logs server | tail -100
 
 fmt: ## formatter
 	go fmt $(pkg)
@@ -65,4 +63,4 @@ fmt: ## formatter
 #-----------------#
 
 zsh: up ## mount services for local dev
-	docker compose exec ${SERVER_NAME} /bin/zsh
+	docker compose exec server /bin/zsh

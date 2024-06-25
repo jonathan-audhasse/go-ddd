@@ -6,54 +6,54 @@ import (
 	"sync"
 )
 
-// CustomerMemoryRepository fulfills the CustomerRepository interface
-type CustomerMemoryRepository struct {
+// CustomerMemRepo fulfills the CustomerRepository interface
+type CustomerMemRepo struct {
 	customers map[string]models.Customer
 	sync.Mutex
 }
 
 // New is a factory function to generate a new repository of customers
-func NewCustomerMemoryRepository() *CustomerMemoryRepository {
-	return &CustomerMemoryRepository{customers: make(map[string]models.Customer)}
+func NewCustomerMemRepo() *CustomerMemRepo {
+	return &CustomerMemRepo{customers: make(map[string]models.Customer)}
 }
 
 // Get a customer by ID
-func (mr *CustomerMemoryRepository) Get(id string) (models.Customer, error) {
-	if cust, ok := mr.customers[id]; ok {
+func (r *CustomerMemRepo) Get(id string) (models.Customer, error) {
+	if cust, ok := r.customers[id]; ok {
 		return cust, nil
 	}
 	return models.Customer{}, errors.RepoItemNotFound.Newf("customer (id=%v) not found in repository", id)
 }
 
-// Add will add a new customer to the repository
-func (mr *CustomerMemoryRepository) Add(cust models.Customer) error {
-	if mr.customers == nil {
-		mr.Lock()
-		mr = &CustomerMemoryRepository{customers: make(map[string]models.Customer)}
-		mr.Unlock()
+// Add a new customer to the repository
+func (r *CustomerMemRepo) Add(cust models.Customer) error {
+	if r.customers == nil {
+		r.Lock()
+		r = &CustomerMemRepo{customers: make(map[string]models.Customer)}
+		r.Unlock()
 	}
-	if _, ok := mr.customers[cust.ID]; ok {
+	if _, ok := r.customers[cust.ID]; ok {
 		return errors.InternalError.Newf("fail to add a new customer %v", cust)
 	}
-	mr.Lock()
-	mr.customers[cust.ID] = cust
-	mr.Unlock()
+	r.Lock()
+	r.customers[cust.ID] = cust
+	r.Unlock()
 	return nil
 }
 
 // List customers
-func (mr *CustomerMemoryRepository) List() ([]models.Customer, error) {
+func (r *CustomerMemRepo) List() ([]models.Customer, error) {
 	cc := make([]models.Customer, 0)
-	for _, cust := range mr.customers {
+	for _, cust := range r.customers {
 		cc = append(cc, cust)
 	}
 	return cc, nil
 }
 
 // Empty customers
-func (mr *CustomerMemoryRepository) Delete() error {
-	for k := range mr.customers {
-		delete(mr.customers, k)
+func (r *CustomerMemRepo) Delete() error {
+	for k := range r.customers {
+		delete(r.customers, k)
 	}
 	return nil
 }

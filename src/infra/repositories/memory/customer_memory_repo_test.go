@@ -8,12 +8,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCustomerMemoryRepo_GetCustomer(t *testing.T) {
+func TestCustomerMemRepo_GetCustomer(t *testing.T) {
 	// Create a fake customer to add to repository
 	cust := models.Customer{ID: "an_ID", Name: "Johnny", Email: "a@b.c"}
 	// Create the repo to use, and add some test Data to it for testing
 	// Skip Factory for this
-	mr := CustomerMemoryRepository{
+	mr := CustomerMemRepo{
 		customers: map[string]models.Customer{cust.ID: cust},
 	}
 
@@ -43,8 +43,8 @@ func TestCustomerMemoryRepo_GetCustomer(t *testing.T) {
 	}
 }
 
-func TestCustomerMemoryRepo_AddCustomer(t *testing.T) {
-	mr := CustomerMemoryRepository{customers: map[string]models.Customer{}}
+func TestCustomerMemRepo_AddCustomer(t *testing.T) {
+	mr := CustomerMemRepo{customers: map[string]models.Customer{}}
 
 	cust := models.Customer{ID: "anID", Name: "Johnny"}
 
@@ -62,8 +62,8 @@ func TestCustomerMemoryRepo_AddCustomer(t *testing.T) {
 	}
 }
 
-func TestCustomerMemoryRepo_ListCustomers(t *testing.T) {
-	mr := CustomerMemoryRepository{customers: map[string]models.Customer{}}
+func TestCustomerMemRepo_ListCustomers(t *testing.T) {
+	mr := CustomerMemRepo{customers: map[string]models.Customer{}}
 	cust := models.Customer{ID: "anID", Name: "Johnny"}
 
 	// Test memory is empty

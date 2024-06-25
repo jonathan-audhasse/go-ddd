@@ -54,7 +54,7 @@ func setupTest(tb testing.TB, method, relativePath, url string, handler gin.Hand
 	return rec
 }
 
-func addCustomers(repo *memory.CustomerMemoryRepository, customers []models.Customer) func(testing.TB) {
+func addCustomers(repo *memory.CustomerMemRepo, customers []models.Customer) func(testing.TB) {
 	// add customers
 	for _, c := range customers {
 		repo.Add(c)
@@ -68,7 +68,7 @@ func addCustomers(repo *memory.CustomerMemoryRepository, customers []models.Cust
 }
 
 func TestCustomerCtl_ListCustomer(t *testing.T) {
-	repo := memory.NewCustomerMemoryRepository()
+	repo := memory.NewCustomerMemRepo()
 	service, err := services.NewCustomerService(repo)
 	if err != nil {
 		t.Fatal(err)
@@ -109,7 +109,7 @@ func TestCustomerCtl_ListCustomer(t *testing.T) {
 }
 
 func TestCustomerCtl_GetCustomer(t *testing.T) {
-	repo := memory.NewCustomerMemoryRepository()
+	repo := memory.NewCustomerMemRepo()
 	service, err := services.NewCustomerService(repo)
 	if err != nil {
 		t.Fatal(err)
@@ -151,7 +151,7 @@ func TestCustomerCtl_GetCustomer(t *testing.T) {
 }
 
 func TestCustomerCtl_AddCustomer(t *testing.T) {
-	repo := memory.NewCustomerMemoryRepository()
+	repo := memory.NewCustomerMemRepo()
 	service, err := services.NewCustomerService(repo)
 	if err != nil {
 		t.Fatal(err)

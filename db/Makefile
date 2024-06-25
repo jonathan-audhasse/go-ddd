@@ -18,7 +18,7 @@ help: ## show this help message
 #  Database  #
 #------------#
 
-LBASE := liquibase --defaults-file=migration/liquibase.properties ==search-path=migration/liquibase
+LBASE := liquibase --defaults-file=migration/liquibase/liquibase.properties --search-path=migration/liquibase
 
 db-update: ## migrate database up
 	$(LBASE) update
