@@ -3,8 +3,8 @@ package api
 import (
 	"context"
 	"fmt"
-	"goddd/src/infra/repositories/memory"
-	"goddd/src/services"
+	"goddd/src/domain/services"
+	"goddd/src/infra/repositories/postgres"
 	"log"
 	"net/http"
 	"os"
@@ -24,20 +24,28 @@ type Api struct {
 
 func NewApi() Api {
 	// init all repositories
-	repo := memory.NewRepository()
+	cfg := NewConfig()
+	url := cfg.DbUrl()
+	// repo := memory.NewRepository()
+	log.Println("Set up DB. Connecting...")
+	db, err := sqlx.Connect("postgres", url)
+	if err != nil {
+		log.Fatalf("fail to connect to DB. err=%s", err)
+	}
+	repo := postgres.NewRepository(db)
 	// init services
 	services, err := services.NewServices(repo)
 	if err != nil {
 		log.Panic(err)
 	}
-	return Api{router: NewRouter(services), cfg: NewConfig()}
+	return Api{router: NewRouter(services), cfg: cfg}
 }
 
 // server
-func (a Api) ServeBis() {
+func (a Api) Serve() {
 	// server
 	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%d", a.cfg.Port),
+		Addr:    fmt.Sprintf(":%d", a.cfg.ApiPort),
 		Handler: a.router.Handler(),
 	}
 	// Initializing the server in a goroutine so that
@@ -65,27 +73,4 @@ func (a Api) ServeBis() {
 		log.Fatal("Server forced to shutdown:", err)
 	}
 	log.Println("Server exiting")
-}
-
-type Cust struct {
-	Id    string
-	Email string
-	Name  string `db:"name"`
-}
-
-func (a Api) Serve() {
-	db, err := sqlx.Connect("postgres", a.cfg.DbUrl())
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "\nUnable to connect to database: %v\n", err)
-		os.Exit(1)
-	}
-	defer db.Close()
-	fmt.Printf("connected. db=%v\n", db)
-	var data Cust
-	if err := db.Get(&data, "select * from customer"); err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	fmt.Printf("%T\n%v\n%#v", data, data, data)
 }

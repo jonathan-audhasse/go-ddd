@@ -4,7 +4,7 @@ DDD design pattern in go
 ## TODO
 - [x] Handle errors
 - [x] gracefull shutdown
-- [ ] PostgresSql
+- [x] PostgresSql
 - [ ] finish product
 - [ ] complete database schema
 - [ ] JWT

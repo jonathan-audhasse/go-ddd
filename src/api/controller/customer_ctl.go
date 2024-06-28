@@ -1,9 +1,9 @@
 package controller
 
 import (
+	"goddd/src/domain/services"
+	"goddd/src/domain/services/dto"
 	"goddd/src/pkg/errors"
-	"goddd/src/services"
-	"goddd/src/services/dto"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -54,4 +54,17 @@ func (clt *CustomerCtl) AddCustomer(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusCreated, customer)
+}
+
+func (clt *CustomerCtl) DeleteCustomer(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "'id' should not be empty"})
+		return
+	}
+	if err := clt.service.DeleteCustomer(id); err != nil {
+		HandleErr(c, err)
+		return
+	}
+	c.Status(http.StatusNoContent)
 }

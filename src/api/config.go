@@ -9,11 +9,11 @@ import (
 )
 
 type Config struct {
-	Port int `env:"API_PORT, default=8000"`
-	DB   *DBConfig
+	ApiPort int `env:"API_PORT, default=8000"`
+	DB      *DbConfig
 }
 
-type DBConfig struct {
+type DbConfig struct {
 	Host string `env:"DB_HOST, default=db"`
 	Port int    `env:"DB_PORT, default=5432"`
 	Name string `env:"DB_NAME, default=postgres"`

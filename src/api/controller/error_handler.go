@@ -36,7 +36,7 @@ func getHttpStatusCode(errID errors.ErrorID) int {
 		return http.StatusUnauthorized
 	case errors.InvalidField, errors.RequiredFieldMissing:
 		return http.StatusBadRequest
-	case errors.InvalidFormat:
+	case errors.InvalidFormat, errors.RepoItemAlreadyExist:
 		return http.StatusUnprocessableEntity
 	case errors.RepoItemNotFound:
 		return http.StatusNotFound

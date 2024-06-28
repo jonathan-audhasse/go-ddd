@@ -2,7 +2,7 @@ package api
 
 import (
 	"goddd/src/api/controller"
-	"goddd/src/services"
+	"goddd/src/domain/services"
 	"log"
 	"net/http"
 
@@ -30,7 +30,8 @@ func NewRouter(services *services.Services) *gin.Engine {
 	// routes
 	r.GET("/customers", custCtl.ListCustomers)
 	r.GET("/customers/:id", custCtl.GetCustomer)
-	r.POST("/customers/", custCtl.AddCustomer)
+	r.DELETE("/customers/:id", custCtl.DeleteCustomer)
+	r.POST("/customers", custCtl.AddCustomer)
 
 	// healthcheck
 	r.GET("/health", controller.Health)
