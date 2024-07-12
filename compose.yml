@@ -10,15 +10,18 @@ services:
     tty: true
     stop_signal: SIGINT
     depends_on:
-     - db
+      db:
+        condition: service_healthy
+      #db-migration:
+      #  condition: service_completed_successfully
     entrypoint: tail -f /dev/null
     #entrypoint: ./db/pgwait.sh
-    #command: go run src/main.go    
-    #healthcheck:
-    #    test: curl --fail localhost:8000/health || exit 1
-    #    interval: 10s
-    #    timeout: 3s
-    #    retries: 3
+    command: go run src/main.go    
+    healthcheck:
+        test: curl --fail localhost:8000/health || exit 1
+        interval: 10s
+        timeout: 3s
+        retries: 3
   
   db:
     image: postgres:15

@@ -10,8 +10,8 @@ type CustomerDTO struct {
 	Email string `json:"email"`
 }
 
-func (dto CustomerDTO) ToModel() (models.Customer, error) {
-	cust, err := models.NewCustomer(dto.Name, dto.Email)
+func (dto CustomerDTO) ToModel(userid string) (models.Customer, error) {
+	cust, err := models.NewCustomer(userid, dto.Name, dto.Email)
 	if err != nil {
 		// handle error
 		log.Printf("fail to transfer %v to customer model: %s\n", dto, err)

@@ -13,14 +13,13 @@ type CustomerService struct {
 	repo repository.CustomerRepository
 }
 
-func NewCustomerService(repo repository.CustomerRepository) (*CustomerService, error) {
+func NewCustomerService(repo repository.CustomerRepository) *CustomerService {
 	// Create the CustomerService
-	cs := &CustomerService{repo}
-	return cs, nil
+	return &CustomerService{repo}
 }
 
-func (cs *CustomerService) ListCustomers() ([]models.Customer, error) {
-	customers, err := cs.repo.List()
+func (cs *CustomerService) ListCustomers(userid string) ([]models.Customer, error) {
+	customers, err := cs.repo.ListByUser(userid)
 	if err != nil {
 		log.Println("fail to list customers: ", err)
 		return []models.Customer{}, errors.Wrap(err, "fail to list customers")
@@ -45,8 +44,8 @@ func (cs *CustomerService) DeleteCustomer(id string) error {
 	return nil
 }
 
-func (cs *CustomerService) AddCustomer(data dto.CustomerDTO) (models.Customer, error) {
-	customer, err := data.ToModel()
+func (cs *CustomerService) AddCustomer(userid string, data dto.CustomerDTO) (models.Customer, error) {
+	customer, err := data.ToModel(userid)
 	if err != nil {
 		log.Printf("fail to add customer %v: %s", data, err)
 		return models.Customer{}, errors.Wrap(err, "fail to add customer")

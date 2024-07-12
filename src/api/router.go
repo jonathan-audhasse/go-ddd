@@ -2,8 +2,8 @@ package api
 
 import (
 	"goddd/src/api/controller"
+	"goddd/src/api/middleware"
 	"goddd/src/domain/services"
-	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -13,7 +13,7 @@ func NewRouter(services *services.Services) *gin.Engine {
 	r := gin.Default()
 
 	// middlewares
-	r.Use(Cors()) //For CORS
+	r.Use(middleware.Cors()) //For CORS
 	r.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{
 			"code":    "PAGE_NOT_FOUND",
@@ -21,20 +21,20 @@ func NewRouter(services *services.Services) *gin.Engine {
 		})
 	})
 
+	// healthcheck
+	r.GET("/health", controller.Health(services.HealthService))
+
+	// Basic Authorisation
+	auth := middleware.BasicAuth(services.UserService)
+
 	// controllers
-	custCtl, err := controller.NewCustomerClt(services.CustService)
-	if err != nil {
-		log.Fatal(err)
-	}
+	custCtl := controller.NewCustomerClt(services.CustomerService)
 
 	// routes
-	r.GET("/customers", custCtl.ListCustomers)
-	r.GET("/customers/:id", custCtl.GetCustomer)
-	r.DELETE("/customers/:id", custCtl.DeleteCustomer)
-	r.POST("/customers", custCtl.AddCustomer)
-
-	// healthcheck
-	r.GET("/health", controller.Health)
+	r.GET("/customers", auth, custCtl.ListCustomers)
+	r.GET("/customers/:id", auth, custCtl.GetCustomer)
+	r.DELETE("/customers/:id", auth, custCtl.DeleteCustomer)
+	r.POST("/customers", auth, custCtl.AddCustomer)
 
 	return r
 }

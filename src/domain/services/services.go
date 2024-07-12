@@ -1,19 +1,20 @@
 package services
 
 import (
-	"fmt"
 	"goddd/src/domain/repository"
 )
 
 type Services struct {
-	CustService *CustomerService
+	*HealthService
+	*UserService
+	*CustomerService
 }
 
 // Factory
-func NewServices(repo *repository.Repository) (*Services, error) {
-	custService, err := NewCustomerService(repo.CustomerRepo)
-	if err != nil {
-		return &Services{}, fmt.Errorf("services error : Customer services not initialize")
+func NewServices(repo *repository.Repository) *Services {
+	return &Services{
+		HealthService:   NewHealthService(repo.HealthRepo),
+		UserService:     NewUserService(repo.UserRepo),
+		CustomerService: NewCustomerService(repo.CustomerRepo),
 	}
-	return &Services{CustService: custService}, nil
 }

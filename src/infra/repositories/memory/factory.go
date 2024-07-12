@@ -6,5 +6,5 @@ import (
 
 // Factory
 func NewRepository() *repository.Repository {
-	return &repository.Repository{CustomerRepo: NewCustomerMemRepo()}
+	return &repository.Repository{CustomerRepo: NewCustomerRepo()}
 }

@@ -4,6 +4,7 @@
 --comment: customer table
 create table customer (
     id varchar(255) not null primary key,
+    user_id varchar(255) not null references "user"(id),
     name varchar(255) not null unique,
     email varchar(255)
 )
@@ -13,6 +14,7 @@ create table customer (
 --comment: product table
 create table product  (
     id varchar(255) not null primary key,
+    user_id varchar(255) not null references "user"(id),
     name varchar(255) not null unique,
     price int not null default 0
 )

@@ -6,19 +6,19 @@ import (
 	"sync"
 )
 
-// customerMemRepo fulfills the CustomerRepository interface
-type customerMemRepo struct {
+// customerRepo fulfills the CustomerRepository interface
+type customerRepo struct {
 	customers map[string]models.Customer
 	sync.Mutex
 }
 
 // New is a factory function to generate a new repository of customers
-func NewCustomerMemRepo() *customerMemRepo {
-	return &customerMemRepo{customers: make(map[string]models.Customer)}
+func NewCustomerRepo() *customerRepo {
+	return &customerRepo{customers: make(map[string]models.Customer)}
 }
 
 // Get a customer by ID
-func (r *customerMemRepo) Get(id string) (models.Customer, error) {
+func (r *customerRepo) Get(id string) (models.Customer, error) {
 	if cust, ok := r.customers[id]; ok {
 		return cust, nil
 	}
@@ -26,10 +26,10 @@ func (r *customerMemRepo) Get(id string) (models.Customer, error) {
 }
 
 // Add a new customer to the repository
-func (r *customerMemRepo) Add(cust models.Customer) error {
+func (r *customerRepo) Add(cust models.Customer) error {
 	if r.customers == nil {
 		r.Lock()
-		r = &customerMemRepo{customers: make(map[string]models.Customer)}
+		r = &customerRepo{customers: make(map[string]models.Customer)}
 		r.Unlock()
 	}
 	if _, ok := r.customers[cust.Id]; ok {
@@ -42,16 +42,18 @@ func (r *customerMemRepo) Add(cust models.Customer) error {
 }
 
 // List customers
-func (r *customerMemRepo) List() ([]models.Customer, error) {
+func (r *customerRepo) ListByUser(userid string) ([]models.Customer, error) {
 	cc := make([]models.Customer, 0)
 	for _, cust := range r.customers {
-		cc = append(cc, cust)
+		if cust.UserId == userid {
+			cc = append(cc, cust)
+		}
 	}
 	return cc, nil
 }
 
 // Remove a customer from repository
-func (r *customerMemRepo) Delete(id string) error {
+func (r *customerRepo) Delete(id string) error {
 	delete(r.customers, id)
 	return nil
 }

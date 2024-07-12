@@ -32,7 +32,7 @@ func TestCustomer_NewCustomer(t *testing.T) {
 		// Run Tests
 		t.Run(tc.test, func(t *testing.T) {
 			// Create a new customer
-			customer, err := NewCustomer(tc.name, tc.email)
+			customer, err := NewCustomer("userid", tc.name, tc.email)
 			assert.Equal(t, err, tc.expErr)
 			if tc.expErr == nil {
 				assert.Equal(t, customer.Name, tc.name)

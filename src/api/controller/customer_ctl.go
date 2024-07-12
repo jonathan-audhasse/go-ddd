@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"goddd/src/api/httperror"
 	"goddd/src/domain/services"
 	"goddd/src/domain/services/dto"
 	"goddd/src/pkg/errors"
@@ -13,14 +14,19 @@ type CustomerCtl struct {
 	service *services.CustomerService
 }
 
-func NewCustomerClt(serv *services.CustomerService) (*CustomerCtl, error) {
-	return &CustomerCtl{service: serv}, nil
+func NewCustomerClt(serv *services.CustomerService) *CustomerCtl {
+	return &CustomerCtl{service: serv}
 }
 
 func (clt *CustomerCtl) ListCustomers(c *gin.Context) {
-	customers, err := clt.service.ListCustomers()
+	userid := c.GetString("user-id")
+	if userid == "" {
+		httperror.HandleErr(c, errors.InternalError.New("unknow user"))
+		return
+	}
+	customers, err := clt.service.ListCustomers(userid)
 	if err != nil {
-		HandleErr(c, err)
+		httperror.HandleErr(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, customers)
@@ -34,23 +40,28 @@ func (clt *CustomerCtl) GetCustomer(c *gin.Context) {
 	}
 	customer, err := clt.service.GetCustomer(id)
 	if err != nil {
-		HandleErr(c, err)
+		httperror.HandleErr(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, customer)
 }
 
 func (clt *CustomerCtl) AddCustomer(c *gin.Context) {
+	userid := c.GetString("user-id")
+	if userid == "" {
+		httperror.HandleErr(c, errors.InternalError.New("unknow user"))
+		return
+	}
 	// checking request body
 	var dto dto.CustomerDTO
 	if err := c.ShouldBindJSON(&dto); err != nil {
-		HandleErr(c, ApiError{ErrorID: errors.RequiredFieldMissing, Msg: "customer body should contain at least a name"})
+		httperror.HandleErr(c, httperror.NewError(errors.RequiredFieldMissing.New("customer body should contain at least a name")))
 		return
 	}
 
-	customer, err := clt.service.AddCustomer(dto)
+	customer, err := clt.service.AddCustomer(userid, dto)
 	if err != nil {
-		HandleErr(c, err)
+		httperror.HandleErr(c, err)
 		return
 	}
 	c.JSON(http.StatusCreated, customer)
@@ -63,7 +74,7 @@ func (clt *CustomerCtl) DeleteCustomer(c *gin.Context) {
 		return
 	}
 	if err := clt.service.DeleteCustomer(id); err != nil {
-		HandleErr(c, err)
+		httperror.HandleErr(c, err)
 		return
 	}
 	c.Status(http.StatusNoContent)

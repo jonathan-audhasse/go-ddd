@@ -8,11 +8,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCustomerMemRepo_GetCustomer(t *testing.T) {
+func TestCustomerRepo_GetCustomer(t *testing.T) {
 	// Create a fake customer to add to repository
-	cust := models.Customer{Id: "an_ID", Name: "Johnny", Email: "a@b.c"}
+	cust := models.Customer{Id: "an_ID", UserId: "", Name: "Johnny", Email: "a@b.c"}
 	// Create the repo to use, and add some test Data to it for testing
-	mr := customerMemRepo{
+	mr := customerRepo{
 		customers: map[string]models.Customer{cust.Id: cust},
 	}
 
@@ -42,8 +42,8 @@ func TestCustomerMemRepo_GetCustomer(t *testing.T) {
 	}
 }
 
-func TestCustomerMemRepo_AddCustomer(t *testing.T) {
-	mr := customerMemRepo{customers: map[string]models.Customer{}}
+func TestCustomerRepo_AddCustomer(t *testing.T) {
+	mr := customerRepo{customers: map[string]models.Customer{}}
 
 	cust := models.Customer{Id: "an_ID", Name: "Johnny", Email: "a@b.c"}
 
@@ -61,12 +61,14 @@ func TestCustomerMemRepo_AddCustomer(t *testing.T) {
 	}
 }
 
-func TestCustomerMemRepo_ListCustomers(t *testing.T) {
-	mr := customerMemRepo{customers: map[string]models.Customer{}}
-	cust := models.Customer{Id: "an_ID", Name: "Johnny", Email: "a@b.c"}
+func TestCustomerRepo_ListCustomers(t *testing.T) {
+	// fake user to add to repository
+	u := models.User{Id: "u_ID"}
+	mr := customerRepo{customers: map[string]models.Customer{}}
+	cust := models.Customer{Id: "an_ID", UserId: u.Id, Name: "Johnny", Email: "a@b.c"}
 
 	// Test memory is empty
-	ll, err := mr.List()
+	ll, err := mr.ListByUser(cust.UserId)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -77,18 +79,18 @@ func TestCustomerMemRepo_ListCustomers(t *testing.T) {
 		t.Errorf("error not expected, got %v", err)
 	}
 
-	ll, err = mr.List()
+	ll, err = mr.ListByUser(cust.UserId)
 	if err != nil {
 		t.Fatal(err)
 	}
 	assert.Len(t, ll, 1, "repository should have a single element")
 }
 
-func TestCustomerMemRepo_DeleteCustomer(t *testing.T) {
+func TestCustomerRepo_DeleteCustomer(t *testing.T) {
 	// Create a fake customer to add to repository
-	cust := models.Customer{Id: "an_ID", Name: "Johnny", Email: "a@b.c"}
+	cust := models.Customer{Id: "an_ID", UserId: "userid", Name: "Johnny", Email: "a@b.c"}
 	// Create the repo to use, and add some test Data to it for testing
-	mr := customerMemRepo{
+	mr := customerRepo{
 		customers: map[string]models.Customer{cust.Id: cust},
 	}
 
@@ -115,7 +117,7 @@ func TestCustomerMemRepo_DeleteCustomer(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			assert.Equal(t, mr.Delete(tc.id), tc.expErr)
-			ll, _ := mr.List()
+			ll, _ := mr.ListByUser(cust.UserId)
 			assert.Len(t, ll, tc.expLen)
 		})
 	}

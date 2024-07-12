@@ -1,4 +1,4 @@
-package controller
+package httperror
 
 import (
 	"goddd/src/pkg/errors"
@@ -7,34 +7,42 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type ApiError struct {
+type httpError struct {
 	ErrorID errors.ErrorID `json:"errorId"`
 	Msg     string         `json:"message"`
 }
 
-func NewApiError(err error) ApiError {
-	return ApiError{ErrorID: errors.GetID(err), Msg: errors.FullError(err)}
+func NewError(err error) httpError {
+	httpErr, ok := err.(httpError)
+	if !ok {
+		httpErr = httpError{ErrorID: errors.GetID(err), Msg: errors.FullError(err)}
+	}
+	return httpErr
 }
 
-func (err ApiError) Error() string {
+func (err httpError) Error() string {
 	return err.Msg
 }
 
 // simple error handler
 func HandleErr(c *gin.Context, err error) {
-	apiErr, ok := err.(ApiError)
-	if !ok {
-		apiErr = NewApiError(err)
-	}
-	c.JSON(getHttpStatusCode(apiErr.ErrorID), apiErr)
+	httpErr := NewError(err)
+	c.JSON(httpStatusCode(httpErr.ErrorID), httpErr)
+}
+
+// for abortion
+func Abort(c *gin.Context, err error) {
+	httpErr := NewError(err)
+	c.Error(httpErr)
+	c.AbortWithStatusJSON(httpStatusCode(httpErr.ErrorID), httpErr)
 }
 
 // map internal error code to Http status code
-func getHttpStatusCode(errID errors.ErrorID) int {
+func httpStatusCode(errID errors.ErrorID) int {
 	switch errID {
 	case errors.UnAuthorized:
 		return http.StatusUnauthorized
-	case errors.InvalidField, errors.RequiredFieldMissing:
+	case errors.InvalidField:
 		return http.StatusBadRequest
 	case errors.InvalidFormat, errors.RepoItemAlreadyExist:
 		return http.StatusUnprocessableEntity

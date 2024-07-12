@@ -1,12 +1,21 @@
 package controller
 
 import (
+	"goddd/src/api/httperror"
+	"goddd/src/domain/services"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
-func Health(c *gin.Context) {
-	var i interface{}
-	c.JSON(http.StatusOK, i)
+func Health(serv *services.HealthService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if err := serv.IsHealthy(); err != nil {
+			// not healthy
+			httperror.HandleErr(c, err)
+			return
+		}
+		// healthy
+		c.JSON(http.StatusOK, map[string]string{})
+	}
 }

@@ -13,15 +13,15 @@ import (
 type CustomerRepository interface {
 	Get(string) (models.Customer, error)
 	Add(models.Customer) error
-	List() ([]models.Customer, error)
+	ListByUser(userid string) ([]models.Customer, error)
 	Delete(string) error
 }
 
 type fakeCustomerRepo struct {
-	mockGet    func(string) (models.Customer, error)
-	mockAdd    func(models.Customer) error
-	mockList   func() ([]models.Customer, error)
-	mockDelete func(string) error
+	mockGet        func(string) (models.Customer, error)
+	mockAdd        func(models.Customer) error
+	mockListByUser func(userid string) ([]models.Customer, error)
+	mockDelete     func(string) error
 }
 
 func (fcr *fakeCustomerRepo) Get(id string) (models.Customer, error) {
@@ -38,9 +38,9 @@ func (fcr *fakeCustomerRepo) Add(cust models.Customer) error {
 	return nil
 }
 
-func (fcr *fakeCustomerRepo) List() ([]models.Customer, error) {
-	if fcr.mockList != nil {
-		return fcr.mockList()
+func (fcr *fakeCustomerRepo) ListByUser(userid string) ([]models.Customer, error) {
+	if fcr.mockListByUser != nil {
+		return fcr.mockListByUser(userid)
 	}
 	return []models.Customer{}, nil
 }
@@ -56,19 +56,19 @@ func (fcr *fakeCustomerRepo) Delete(id string) error {
 func TestCustomerServices_List(t *testing.T) {
 	mokcErr := fmt.Errorf("mock error")
 	repo := &fakeCustomerRepo{}
-	services, _ := NewCustomerService(repo)
+	services := NewCustomerService(repo)
 	t.Run("list customers: errors should be catched and wrapped", func(t *testing.T) {
-		repo.mockList = func() ([]models.Customer, error) {
+		repo.mockListByUser = func(string) ([]models.Customer, error) {
 			return []models.Customer{}, mokcErr
 		}
-		_, err := services.ListCustomers()
+		_, err := services.ListCustomers("")
 		assert.Equal(t, errors.Wrap(mokcErr, "fail to list customers"), err)
 	})
 	t.Run("list customers OK", func(t *testing.T) {
-		repo.mockList = func() ([]models.Customer, error) {
+		repo.mockListByUser = func(string) ([]models.Customer, error) {
 			return []models.Customer{{}}, nil
 		}
-		res, err := services.ListCustomers()
+		res, err := services.ListCustomers("userid")
 		assert.Nil(t, err, "unexpected error")
 		assert.Len(t, res, 1, "expected a list of customer")
 	})
@@ -78,7 +78,7 @@ func TestCustomerServices_List(t *testing.T) {
 func TestCustomerServices_Get(t *testing.T) {
 	mokcErr := fmt.Errorf("mock error")
 	repo := &fakeCustomerRepo{}
-	services, _ := NewCustomerService(repo)
+	services := NewCustomerService(repo)
 	t.Run("get a customer: errors should be catched and wrapped", func(t *testing.T) {
 		repo.mockGet = func(id string) (models.Customer, error) {
 			return models.Customer{}, mokcErr
@@ -101,11 +101,11 @@ func TestCustomerServices_Get(t *testing.T) {
 func TestCustomerServices_Add(t *testing.T) {
 	mokcErr := fmt.Errorf("mock error")
 	repo := &fakeCustomerRepo{}
-	services, _ := NewCustomerService(repo)
+	services := NewCustomerService(repo)
 	// adding customers
 	custToAdd := dto.CustomerDTO{Name: "Johnny", Email: "a@b.c"}
 	t.Run("add customer: name should not be empty", func(t *testing.T) {
-		_, err := services.AddCustomer(dto.CustomerDTO{})
+		_, err := services.AddCustomer("userid", dto.CustomerDTO{})
 		assert.Equal(t, errors.GetID(err), errors.InvalidFormat)
 		assert.EqualError(t, err, "fail to add customer")
 		uerr := errors.Unwrap(err)
@@ -115,7 +115,7 @@ func TestCustomerServices_Add(t *testing.T) {
 		repo.mockAdd = func(c models.Customer) error {
 			return mokcErr
 		}
-		_, err := services.AddCustomer(custToAdd)
+		_, err := services.AddCustomer("", custToAdd)
 		assert.Equal(t, errors.Wrap(mokcErr, "fail to add customer ({Johnny a@b.c})"), err)
 	})
 	t.Run("add customer OK", func(t *testing.T) {
@@ -123,7 +123,7 @@ func TestCustomerServices_Add(t *testing.T) {
 			return nil
 		}
 		cust := models.Customer{Name: "Johnny", Email: "a@b.c"}
-		res, err := services.AddCustomer(custToAdd)
+		res, err := services.AddCustomer("userid", custToAdd)
 		assert.Nil(t, err, "unexpected error")
 		assert.Equal(t, cust.Name, res.Name, "expected customer name be the same")
 		assert.Equal(t, cust.Email, res.Email, "expected customer email be the same")
@@ -134,7 +134,7 @@ func TestCustomerServices_Add(t *testing.T) {
 func TestCustomerServices_Delete(t *testing.T) {
 	mokcErr := fmt.Errorf("mock error")
 	repo := &fakeCustomerRepo{}
-	services, _ := NewCustomerService(repo)
+	services := NewCustomerService(repo)
 	t.Run("delete a customer: errors should be catched and wrapped", func(t *testing.T) {
 		repo.mockDelete = func(string) error {
 			return mokcErr
