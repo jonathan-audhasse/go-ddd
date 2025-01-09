@@ -23,7 +23,7 @@ LBASE := liquibase --defaults-file=migration/liquibase/liquibase.properties --se
 db-update: ## migrate database up
 	$(LBASE) update
 
-db-downgrade: check-liquibase-properties ## migrate database down
+db-downgrade: ## migrate database down
 	$(LBASE) rollback-count 99
 
 db-populate: ## populate database

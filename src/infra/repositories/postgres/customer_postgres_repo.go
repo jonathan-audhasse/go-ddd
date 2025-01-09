@@ -55,7 +55,7 @@ func (r *customerRepo) ListByUser(userid string) ([]models.Customer, error) {
 		return []models.Customer{}, errors.InternalError.New("user must be specified")
 	}
 	cust := make([]models.Customer, 0)
-	if err := r.db.Select(&cust, "SELECT * FROM customer user_id=$1", userid); err != nil {
+	if err := r.db.Select(&cust, "SELECT * FROM customer WHERE user_id=$1", userid); err != nil {
 		log.Printf("failed to execute queyr for user id=%s: %s\n", userid, err)
 		return cust, errors.InternalError.Wrap(err, "fail to list customer from repository")
 	}
@@ -67,7 +67,7 @@ func (r *customerRepo) Delete(id string) error {
 	if id == "" {
 		return errors.InternalError.New("customer id must not be empty")
 	}
-	if _, err := r.db.Exec("DELETE FROM customer where id=$1", id); err != nil {
+	if _, err := r.db.Exec("DELETE FROM customer WHERE id=$1", id); err != nil {
 		return errors.InternalError.Wrapf(err, "fail to delete customer id=%v from repository", id)
 	}
 	return nil
