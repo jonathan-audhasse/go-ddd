@@ -17,6 +17,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var db *sqlx.DB
@@ -68,7 +69,8 @@ func clearUsers(tb testing.TB) {
 func addUsers(t *testing.T, users ...models.User) func(testing.TB) {
 	// add users
 	tx := db.MustBegin()
-	tx.NamedExec("INSERT INTO \"user\" (id, username, password) VALUES (:id, :username, :password)", users)
+	_, err := tx.NamedExec("INSERT INTO \"user\" (id, username, password) VALUES (:id, :username, :password)", users)
+	require.NoError(t, err)
 	if err := tx.Commit(); err != nil {
 		t.Error(err)
 	}
@@ -89,7 +91,8 @@ func clearCustomers(tb testing.TB) {
 func addCustomers(t *testing.T, customers []models.Customer) func(testing.TB) {
 	tx := db.MustBegin()
 	// add customers
-	tx.NamedExec("INSERT INTO customer (id, user_id, name, email) VALUES (:id, :user_id, :name, :email)", customers)
+	_, err := tx.NamedExec("INSERT INTO customer (id, user_id, name, email) VALUES (:id, :user_id, :name, :email)", customers)
+	require.NoError(t, err)
 	if err := tx.Commit(); err != nil {
 		t.Error(err)
 	}

@@ -8,6 +8,7 @@ import (
 
 	_ "github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func clearDB(tb testing.TB) {
@@ -21,8 +22,10 @@ func addCustomers(t *testing.T, user models.User, customers ...models.Customer) 
 	// add customers
 	tx := db.MustBegin()
 	// add user
-	tx.NamedExec("INSERT INTO \"user\" (id, username, password) VALUES (:id, :username, :password)", &user)
-	tx.NamedExec("INSERT INTO customer (id, user_id, name, email) VALUES (:id, :user_id, :name, :email)", customers)
+	_, err := tx.NamedExec("INSERT INTO \"user\" (id, username, password) VALUES (:id, :username, :password)", &user)
+	require.NoError(t, err)
+	_, err = tx.NamedExec("INSERT INTO customer (id, user_id, name, email) VALUES (:id, :user_id, :name, :email)", customers)
+	require.NoError(t, err)
 	if err := tx.Commit(); err != nil {
 		t.Error(err)
 	}
@@ -81,17 +84,19 @@ func TestCustomerRepo_AddCustomer(t *testing.T) {
 
 	// no item yet
 	var count int
-	db.QueryRow("SELECT count(*) FROM customer").Scan(&count)
+	err := db.QueryRow("SELECT count(*) FROM customer").Scan(&count)
+	require.NoError(t, err)
 	assert.Equal(t, count, 0, "repository should be empty")
 
 	// add a new customer
 	assert.NoError(t, r.Add(cust), "unexpected error")
 
-	db.QueryRow("SELECT count(*) FROM customer").Scan(&count)
+	err = db.QueryRow("SELECT count(*) FROM customer").Scan(&count)
+	require.NoError(t, err)
 	assert.Equal(t, count, 1, "repository should contain a customer")
 
 	// add the same customer twice should fail
-	err := r.Add(cust)
+	err = r.Add(cust)
 	if err == nil {
 		t.Fatal(err)
 	}

@@ -103,7 +103,7 @@ func Newf(msg string, args ...interface{}) error {
 
 // Wrap wrans an error with a string
 func Wrap(err error, msg string) error {
-	return Wrapf(err, msg)
+	return Wrapf(err, "%s", msg)
 }
 
 // Wrapf wraps an error with format string

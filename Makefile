@@ -58,6 +58,9 @@ logs: ## visualize the last 100 docker logs
 fmt: ## formatter
 	go fmt $(pkg)
 
+lint: ## run linter
+	golangci-lint run
+
 #-----------------#
 #  Local dev      #
 #-----------------#

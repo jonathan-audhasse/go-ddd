@@ -33,7 +33,7 @@ func HandleErr(c *gin.Context, err error) {
 // for abortion
 func Abort(c *gin.Context, err error) {
 	httpErr := NewError(err)
-	c.Error(httpErr)
+	_ = c.Error(httpErr)
 	c.AbortWithStatusJSON(httpStatusCode(httpErr.ErrorID), httpErr)
 }
 

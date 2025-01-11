@@ -11,6 +11,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var db *sqlx.DB
@@ -40,7 +41,8 @@ func clearUsers(tb testing.TB) {
 func addUsers(t *testing.T, users ...models.User) func(testing.TB) {
 	// add users
 	tx := db.MustBegin()
-	tx.NamedExec("INSERT INTO \"user\" (id, username, password) VALUES (:id, :username, :password)", users)
+	_, err := tx.NamedExec("INSERT INTO \"user\" (id, username, password) VALUES (:id, :username, :password)", users)
+	require.NoError(t, err)
 	if err := tx.Commit(); err != nil {
 		t.Error(err)
 	}
