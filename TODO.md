@@ -15,4 +15,6 @@ For learning purposes, This is my Todo list
 - [ ] complete database schema
 
 ## Work In progress
-- [ ] Update doc 
+- [ ] Use mock in unit test
+- [ ] correct FIXMEs
+- [ ] Update doc

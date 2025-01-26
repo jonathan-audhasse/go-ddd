@@ -10,7 +10,7 @@ import (
 
 // Services that define customer's service implementation
 type CustomerService struct {
-	repo repository.CustomerRepository
+	custumerRepo repository.CustomerRepository
 }
 
 func NewCustomerService(repo repository.CustomerRepository) *CustomerService {
@@ -19,7 +19,7 @@ func NewCustomerService(repo repository.CustomerRepository) *CustomerService {
 }
 
 func (cs *CustomerService) ListCustomers(userid string) ([]models.Customer, error) {
-	customers, err := cs.repo.ListByUser(userid)
+	customers, err := cs.custumerRepo.ListByUser(userid)
 	if err != nil {
 		log.Println("fail to list customers: ", err)
 		return []models.Customer{}, errors.Wrap(err, "fail to list customers")
@@ -28,7 +28,7 @@ func (cs *CustomerService) ListCustomers(userid string) ([]models.Customer, erro
 }
 
 func (cs *CustomerService) GetCustomer(id string) (models.Customer, error) {
-	customer, err := cs.repo.Get(id)
+	customer, err := cs.custumerRepo.Get(id)
 	if err != nil {
 		log.Printf("fail to get customer id=%s: %s\n", id, err)
 		return models.Customer{}, errors.Wrapf(err, "fail to get customer id=%v", id)
@@ -37,7 +37,7 @@ func (cs *CustomerService) GetCustomer(id string) (models.Customer, error) {
 }
 
 func (cs *CustomerService) DeleteCustomer(id string) error {
-	if err := cs.repo.Delete(id); err != nil {
+	if err := cs.custumerRepo.Delete(id); err != nil {
 		log.Printf("fail to delete customer id=%s: %s\n", id, err)
 		return errors.Wrapf(err, "fail to delete customer id=%v", id)
 	}
@@ -50,7 +50,7 @@ func (cs *CustomerService) AddCustomer(userid string, data dto.CustomerDTO) (mod
 		log.Printf("fail to add customer %v: %s", data, err)
 		return models.Customer{}, errors.Wrap(err, "fail to add customer")
 	}
-	if err := cs.repo.Add(customer); err != nil {
+	if err := cs.custumerRepo.Add(customer); err != nil {
 		log.Printf("fail to add customer %v: %s", data, err)
 		return models.Customer{}, errors.Wrapf(err, "fail to add customer (%v)", data)
 	}

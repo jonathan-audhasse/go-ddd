@@ -33,7 +33,8 @@ func (fr *fakeUserRepo) GetByUsername(uname string) (models.User, error) {
 	return models.User{}, nil
 }
 
-// Test get user by username
+// FIXME use mock instead
+// Test GetUserByUsername
 func TestUserServices_GetByUsername(t *testing.T) {
 	mokcErr := fmt.Errorf("mock error")
 	repo := &fakeUserRepo{}
