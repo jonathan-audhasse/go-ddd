@@ -1,0 +1,25 @@
+# Top level defaults config
+# DEPRECATION: resolve-type-alias will be permanently set to False in v3.
+# Please modify your config to set the parameter to False.
+# deprecation-name=resolve-type-alias url=https://vektra.github.io/mockery/v2.51/deprecations/#resolve-type-alias version=v2.51.1
+resolve-type-alias: False
+# DEPRECATION: issue-845-fix must be set to True to remove this warning.
+# Visit the link for more details.
+# deprecation-name=issue-845-fix url=https://vektra.github.io/mockery/v2.51/deprecations/#issue-845-fix version=v2.51.1
+issue-845-fix: True
+with-expecter: true
+# mockrepo
+outpkg: mockrepo
+dir: "{{.InterfaceDir}}/.mock/repo"
+filename: "{{.InterfaceName | snakecase | lower }}.go"
+packages:
+    goddd/src/domain/repository:
+        # Package-specific config here
+        config:
+            recursive: true
+            include-regex: ".*Repository"
+        # interfaces:
+        #     # Interface specific here
+        #     Foo:
+        #         # Modify package-level config for this specific interface (if applicable)
+        #         config:

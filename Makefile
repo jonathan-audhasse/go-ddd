@@ -10,9 +10,9 @@ define err
 	printf "\033[31mError: %s\033[0m\n" $(1)
 endef
 
-help: ## show this help message
+help: ## Show this help message
 	@echo "Valid script operations:"
-	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | awk '{split($$0, a, ":.*##*"); printf "... %-20s :%s\n", a[1], a[2]}'
+	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | awk '{split($$0, a, ":.*##*"); printf "\033[0;32m%-10s\033[m #%s\n", a[1], a[2]}'
 
 #-------------#
 #  Variables  #
@@ -22,7 +22,7 @@ help: ## show this help message
 #  Common targets  #
 #------------------#
 
-build: ## build
+build: ## Build
 	docker compose build
 
 clean:
@@ -32,17 +32,17 @@ clean:
 #  Mount Services  #
 #------------------#
 
-up: ## mount services
+up: ## Mount services
 	docker compose up -d
 
-down: ## stop and Remove all mounted services
+down: ## Stop and Remove all mounted services
 	docker compose down --remove-orphans
 
 #---------#
 #  Tests  #
 #---------#
 
-test: up ## run tests
+test: up ## Run tests
 	$(call info, "TODO set tests")
 	docker compose run --rm --no-deps --entrypoint=go server test ./...
 
@@ -50,20 +50,28 @@ test: up ## run tests
 #  Helpers  #
 #-----------#
 
-pkg := $(shell go list ./...)
-
-logs: ## visualize the last 100 docker logs
+logs: ## Visualize the last 100 docker logs
 	docker compose logs server | tail -100
 
-fmt: ## formatter
-	go fmt $(pkg)
+fmt: ## Formatter
+	go fmt ./...
 
-lint: ## run linter
+lint: ## Run linter (ref: https://golangci-lint.run)
 	golangci-lint run
 
 #-----------------#
 #  Local dev      #
 #-----------------#
 
-zsh: up ## mount services for local dev
+zsh: up ## Mount services for local dev
 	docker compose exec server /bin/zsh
+
+#---------#
+#  Mocks  #
+#---------#
+
+mock-gen: # Generate mocks
+	mockery --log-level=""
+
+mock-clean: # Clean generated mock files
+	@find -name .mock -print -exec rm -r {} +
