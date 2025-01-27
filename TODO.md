@@ -7,6 +7,7 @@ For learning purposes, This is my Todo list
 - [x] gracefull shutdown
 - [x] PostgresSql
 - [ ] add mockery
+- [ ] Add github actions (tests)
 - [ ] Nginx or traefik as reverse proxy and load balancer
 - [ ] Authen system (JWT or basic Authen or OAuth2)
 - [ ] HTTPS
