@@ -7,7 +7,7 @@ For learning purposes, This is my Todo list
 - [x] gracefull shutdown
 - [x] PostgresSql
 - [ ] add mockery
-- [ ] Add github actions (tests)
+- [ ] Add github actions (tests, release-please)
 - [ ] Add an ORM [gorm](https://github.com/go-gorm/gorm), [sqlc](https://github.com/sqlc-dev/sqlc), [sqlboiler](https://github.com/volatiletech/sqlboiler)
 - [ ] Find a way to populate database (remove inserts from sql script)
 - [ ] Nginx or traefik as reverse proxy and load balancer
