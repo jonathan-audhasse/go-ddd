@@ -12,8 +12,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      #db-migration:
-      #  condition: service_completed_successfully
+    #db-migration:
+    #  condition: service_completed_successfully
     entrypoint: tail -f /dev/null
     # entrypoint: ./db/pgwait.sh
     # command: go run src/main.go
