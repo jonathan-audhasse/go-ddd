@@ -21,3 +21,21 @@ For learning purposes, This is my Todo list
 - [ ] Use mock in unit test
 - [ ] correct FIXMEs
 - [ ] Update doc
+
+## Stack to build
+
+- gRPC
+- API protobuf
+- microservices archi
+- MongoDB for NoSQL or (PostgreSQL with `pgx` + `sqlc` + `migrate`)
+- liquibase for DB migration
+- postman for API
+- Redis for caching
+- Victoria Metrics + Victoria Logs for monitoring
+- Nats for event
+- bearer token for auth
+- GKS (Google K8 Engine)
+- GitHub Actions for CI/CD
+- Terraform for IAS
+- docker for container
+- vault for secrets
