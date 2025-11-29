@@ -27,13 +27,15 @@ For learning purposes, This is my Todo list
 - gRPC
 - API protobuf
 - microservices archi
+- Traefik as load balancer (extremely easy, great for microservices)
 - MongoDB for NoSQL or (PostgreSQL with `pgx` + `sqlc` + `migrate`)
 - liquibase for DB migration
 - postman for API
 - Redis for caching
 - Victoria Metrics + Victoria Logs for monitoring
-- Nats for event
-- bearer token for auth
+- Event-driven with Kafka (Best choice) or NATS
+- websocket ??
+- JWT bearer token for auth
 - GKS (Google K8 Engine)
 - GitHub Actions for CI/CD
 - Terraform for IAS
