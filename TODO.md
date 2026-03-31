@@ -6,6 +6,7 @@ For learning purposes, This is my Todo list
 - [x] Handle errors
 - [x] gracefull shutdown
 - [x] PostgresSql
+- [ ] use go-migrate for DB migration
 - [ ] add mockery
 - [ ] Add github actions (tests, release-please)
 - [ ] Add an ORM [gorm](https://github.com/go-gorm/gorm), [sqlc](https://github.com/sqlc-dev/sqlc), [sqlboiler](https://github.com/volatiletech/sqlboiler)
