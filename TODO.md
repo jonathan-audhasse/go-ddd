@@ -30,7 +30,6 @@ For learning purposes, This is my Todo list
 - microservices archi
 - Traefik as load balancer (extremely easy, great for microservices)
 - MongoDB for NoSQL or (PostgreSQL with `pgx` + `sqlc` + `migrate`)
-- liquibase for DB migration
 - postman for API
 - Redis for caching
 - Victoria Metrics + Victoria Logs for monitoring
@@ -38,6 +37,7 @@ For learning purposes, This is my Todo list
 - websocket ??
 - JWT bearer token for auth
 - GKS (Google K8 Engine)
+- keycloak for IdP/SSO
 - GitHub Actions for CI/CD
 - Terraform for IAS
 - docker for container
