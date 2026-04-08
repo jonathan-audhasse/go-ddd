@@ -3,7 +3,15 @@
 For learning purposes, This is my Todo list
 
 !! 
-Please ask chatGPT to generate a use case where you can practice rRPC, API proto, mircroservice, caches with redis, event-driven with NATS, JWT PostgreSQL (pgx, sqlc and migrate)
+Please ask chatGPT to generate a use case where you can practice 
+- grRPC, 
+- API proto,
+- mircroservice,
+- API gateway (authen with JWT, loadbalancer, keyclock ...)
+- MongoDB or PostgreSQL (pgx, sqlc and migrate) with horizontal scalability (DB replication)
+- caches with redis
+- event-driven with NATS
+- monitoring with victoria metrics + victoria Los
 !!
 
 ## Todo
