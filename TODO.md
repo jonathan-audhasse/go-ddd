@@ -2,6 +2,10 @@
 
 For learning purposes, This is my Todo list
 
+!! 
+Please ask chatGPT to generate a use case where you can practice rRPC, API proto, mircroservice, caches with redis, event-driven with NATS, JWT PostgreSQL (pgx, sqlc and migrate)
+!!
+
 ## Todo
 - [x] Handle errors
 - [x] gracefull shutdown
