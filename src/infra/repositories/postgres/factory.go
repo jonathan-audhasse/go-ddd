@@ -1,7 +1,7 @@
 package postgres
 
 import (
-	"goddd/src/domain/repository"
+	"goddd/domain/repository"
 	"log"
 
 	"github.com/jmoiron/sqlx"

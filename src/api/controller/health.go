@@ -1,8 +1,8 @@
 package controller
 
 import (
-	"goddd/src/api/httperror"
-	"goddd/src/domain/services"
+	"goddd/api/httperror"
+	"goddd/domain/services"
 	"net/http"
 
 	"github.com/gin-gonic/gin"

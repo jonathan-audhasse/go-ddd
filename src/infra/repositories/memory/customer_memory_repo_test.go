@@ -1,8 +1,8 @@
 package memory
 
 import (
-	"goddd/src/domain/models"
-	"goddd/src/pkg/errors"
+	"goddd/domain/models"
+	"goddd/pkg/errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

@@ -1,0 +1,16 @@
+# Top-level defaults config
+template: testify
+# directory to save the mock files
+dir: '{{.InterfaceDir}}/.mocks'
+# filename to save the mock files
+# uncomment the following line to generate the mock files with the default filename
+# it will generate a single mock file for each interface
+# filename: '{{.InterfaceName | snakecase | lower }}.go'
+filename: 'mock_tests.go'
+# packages to generate the mock files
+pkgname: '{{.SrcPackageName}}'
+all: false
+packages:
+    goddd/domain/repository:
+        config:
+            all: true

@@ -3,8 +3,8 @@ package api
 import (
 	"context"
 	"fmt"
-	"goddd/src/domain/services"
-	"goddd/src/infra/repositories/postgres"
+	"goddd/domain/services"
+	"goddd/infra/repositories/postgres"
 	"log"
 	"net/http"
 	"os"

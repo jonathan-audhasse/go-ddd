@@ -1,7 +1,7 @@
 package memory
 
 import (
-	"goddd/src/domain/repository"
+	"goddd/domain/repository"
 )
 
 // Factory

@@ -2,7 +2,7 @@ package models
 
 import (
 	"fmt"
-	"goddd/src/pkg/errors"
+	"goddd/pkg/errors"
 
 	"github.com/google/uuid"
 )

@@ -1,10 +1,10 @@
 package controller
 
 import (
-	"goddd/src/api/httperror"
-	"goddd/src/domain/services"
-	"goddd/src/domain/services/dto"
-	"goddd/src/pkg/errors"
+	"goddd/api/httperror"
+	"goddd/domain/services"
+	"goddd/domain/services/dto"
+	"goddd/pkg/errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"

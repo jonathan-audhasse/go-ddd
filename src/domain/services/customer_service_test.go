@@ -2,10 +2,10 @@ package services
 
 import (
 	"fmt"
-	"goddd/src/domain/models"
-	mockrepo "goddd/src/domain/repository/.mock/repo"
-	"goddd/src/domain/services/dto"
-	"goddd/src/pkg/errors"
+	"goddd/domain/models"
+	mockrepo "goddd/domain/repository/.mocks"
+	"goddd/domain/services/dto"
+	"goddd/pkg/errors"
 	"math/rand"
 	"testing"
 

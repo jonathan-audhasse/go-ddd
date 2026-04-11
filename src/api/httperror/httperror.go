@@ -1,7 +1,7 @@
 package httperror
 
 import (
-	"goddd/src/pkg/errors"
+	"goddd/pkg/errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"

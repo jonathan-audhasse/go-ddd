@@ -1,9 +1,9 @@
 package services
 
 import (
-	"goddd/src/domain/models"
-	"goddd/src/domain/repository"
-	"goddd/src/pkg/errors"
+	"goddd/domain/models"
+	"goddd/domain/repository"
+	"goddd/pkg/errors"
 )
 
 // UserService for user's services implementation

@@ -9,9 +9,9 @@ services:
       - 8000:8000
     tty: true
     stop_signal: SIGINT
-    depends_on:
-      db:
-        condition: service_healthy
+    #depends_on:
+      #db:
+      #  condition: service_healthy
       #db-migration:
       #  condition: service_completed_successfully
     entrypoint: tail -f /dev/null
@@ -24,7 +24,7 @@ services:
     #     retries: 3
   
   db:
-    image: postgres:15
+    image: postgres:18
     environment:
       - POSTGRES_USER=$DB_USER
       - POSTGRES_DB=$DB_NAME

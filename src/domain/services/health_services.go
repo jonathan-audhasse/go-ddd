@@ -1,8 +1,8 @@
 package services
 
 import (
-	"goddd/src/domain/repository"
-	"goddd/src/pkg/errors"
+	"goddd/domain/repository"
+	"goddd/pkg/errors"
 	"log"
 	"os"
 )

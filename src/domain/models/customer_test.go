@@ -1,7 +1,7 @@
 package models
 
 import (
-	"goddd/src/pkg/errors"
+	"goddd/pkg/errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

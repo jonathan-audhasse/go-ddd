@@ -1,8 +1,8 @@
 package postgres
 
 import (
-	"goddd/src/domain/models"
-	"goddd/src/pkg/errors"
+	"goddd/domain/models"
+	"goddd/pkg/errors"
 	"log"
 	"testing"
 

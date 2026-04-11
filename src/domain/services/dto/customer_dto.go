@@ -1,7 +1,7 @@
 package dto
 
 import (
-	"goddd/src/domain/models"
+	"goddd/domain/models"
 	"log"
 )
 

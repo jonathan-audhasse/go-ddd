@@ -63,7 +63,7 @@ lint: ## Run linter (ref: https://golangci-lint.run)
 #  Local dev      #
 #-----------------#
 
-zsh: up ## Mount services for local dev
+zsh-mode: up ## Mount services for local dev
 	docker compose exec server /bin/zsh
 
 #---------#
@@ -71,7 +71,7 @@ zsh: up ## Mount services for local dev
 #---------#
 
 mock-gen: # Generate mocks
-	mockery --log-level=""
+	cd src && mockery --log-level=""
 
 mock-clean: # Clean generated mock files
-	@find -name .mock -print -exec rm -r {} +
+	cd src && find -name .mocks -print -exec rm -r {} +

@@ -3,9 +3,9 @@ package middleware
 import (
 	"crypto/sha256"
 	"encoding/base64"
-	"goddd/src/api/httperror"
-	"goddd/src/domain/services"
-	"goddd/src/pkg/errors"
+	"goddd/api/httperror"
+	"goddd/domain/services"
+	"goddd/pkg/errors"
 
 	"github.com/gin-gonic/gin"
 )

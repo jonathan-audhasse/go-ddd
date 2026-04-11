@@ -1,6 +1,6 @@
 package repository
 
-import "goddd/src/domain/models"
+import "goddd/domain/models"
 
 type Repository struct {
 	HealthRepo   HealthRepository

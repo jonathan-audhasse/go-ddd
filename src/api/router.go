@@ -1,9 +1,9 @@
 package api
 
 import (
-	"goddd/src/api/controller"
-	"goddd/src/api/middleware"
-	"goddd/src/domain/services"
+	"goddd/api/controller"
+	"goddd/api/middleware"
+	"goddd/domain/services"
 	"net/http"
 
 	"github.com/gin-gonic/gin"

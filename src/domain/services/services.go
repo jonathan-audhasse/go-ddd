@@ -1,7 +1,7 @@
 package services
 
 import (
-	"goddd/src/domain/repository"
+	"goddd/domain/repository"
 )
 
 type Services struct {

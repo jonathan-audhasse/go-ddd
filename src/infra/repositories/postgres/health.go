@@ -1,7 +1,7 @@
 package postgres
 
 import (
-	"goddd/src/pkg/errors"
+	"goddd/pkg/errors"
 
 	"github.com/jmoiron/sqlx"
 )

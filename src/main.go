@@ -1,7 +1,7 @@
 package main
 
 import (
-	"goddd/src/api"
+	"goddd/api"
 )
 
 func main() {
