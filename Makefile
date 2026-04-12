@@ -66,12 +66,16 @@ lint: ## Run linter (ref: https://golangci-lint.run)
 zsh-mode: up ## Mount services for local dev
 	docker compose exec server /bin/zsh
 
-#---------#
-#  Mocks  #
-#---------#
+#------------#
+#  Generate  #
+#------------#
+
+# make sure sqlc is installed. refer to: https://docs.sqlc.dev/en/latest/overview/install.html
+sqlc-gen: # regenerates sqlcgen/ from queries/users.sql
+	cd goddd && sqlc generate
 
 mock-gen: # Generate mocks
-	cd src && mockery --log-level=""
+	cd goddd && mockery --log-level=""
 
 mock-clean: # Clean generated mock files
-	cd src && find -name .mocks -print -exec rm -r {} +
+	cd goddd && find -name .mocks -print -exec rm -r {} +

@@ -1,0 +1,15 @@
+# refer to https://github.com/sqlc-dev/sqlc for more detail
+version: "2"
+
+sql:
+  - engine: "postgresql"
+    schema: "internal/infrastructure/persistence/migrations/files"
+    queries: "internal/infrastructure/persistence/postgres/queries"
+    gen:
+      go:
+        package: "sqlcgen"
+        out: "internal/infrastructure/persistence/postgres/sqlcgen"
+        sql_package: "pgx/v5"
+        emit_result_struct_pointers: true
+        emit_params_struct_pointers: true
+        emit_interface: true          # generates Querier interface for mocking

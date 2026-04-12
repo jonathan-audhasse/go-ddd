@@ -29,6 +29,7 @@ Please ask chatGPT to generate a use case where you can practice
 - [ ] manage users
 - [ ] finish product
 - [ ] complete database schema
+- [ ] [cleanenv](https://pkg.go.dev/github.com/ilyakaznacheev/cleanenv), [viper](https://github.com/spf13/viper), [cobra](https://github.com/spf13/cobra),  
 
 ## Work In progress
 - [ ] Use mock in unit test
