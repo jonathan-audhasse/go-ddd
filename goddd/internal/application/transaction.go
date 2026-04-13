@@ -2,13 +2,11 @@ package application
 
 import (
 	"context"
-	"goddd/internal/domain/repository"
 )
 
-type UnitOfWork interface {
-    Users() repository.UserRepository
-}
-
+// TransactionManager is a transaction runner that handles commit/rollback
+// This is for Unit of Work: it defines the transactional boundary.
 type TransactionManager interface {
-    WithTx(ctx context.Context, fn func(uow UnitOfWork) error) error
+	// Do run the function fn wrap in a trasaction.
+    Do(ctx context.Context, fn func(ctx context.Context) error) error
 }

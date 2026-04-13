@@ -23,6 +23,23 @@ services:
     #     timeout: 3s
     #     retries: 3
   
+
+  # api:
+  #   build: .
+  #   command: ["/app/api"]
+  #   depends_on:
+  #     migrate:
+  #       condition: service_completed_successfully
+
+  # migrate:
+  #   build: .
+  #   command: ["/app/migrate", "-cmd=up"]
+  #   environment:
+  #     DATABASE_URL: postgres://postgres:postgres@db:5432/myapp?sslmode=disable
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+
   db:
     image: postgres:18
     environment:

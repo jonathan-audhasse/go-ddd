@@ -265,6 +265,9 @@ If you want, I can also show a ready-to-use middleware stack example for either 
 
 # chi or gin or other
 
+[gin](https://github.com/gin-gonic/gin)
+[chi](https://github.com/go-chi/chi)
+
 For a REST API in Go, the “best” depends on what you want (minimalism vs framework).
 
 Chi

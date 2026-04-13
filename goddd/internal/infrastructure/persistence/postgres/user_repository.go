@@ -5,24 +5,41 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"goddd/internal/domain/models"
 	"goddd/internal/domain/repository"
 	"goddd/internal/infrastructure/persistence/postgres/sqlcgen"
+	"goddd/internal/infrastructure/persistence/transaction"
 )
 
 // UserRepository implements domain/user.Repository using sqlc-generated queries.
 type UserRepository struct {
-	q *sqlcgen.Queries
+	pool *pgxpool.Pool
 }
 
-func NewUserRepository(tx pgx.Tx) *UserRepository {
-	return &UserRepository{q: sqlcgen.New(tx)}
+func NewUserRepository(pool *pgxpool.Pool) *UserRepository {
+	return &UserRepository{pool}
 }
+
+// retrieve sqlc queries from connection pool.
+// Define the queries from the context transaction if existed.
+// If not create a new one from the connection
+func GetQueries(ctx context.Context, pool *pgxpool.Pool) *sqlcgen.Queries {
+	if tx, ok := transaction.GetTx(ctx); ok {
+		return  sqlcgen.New(tx)
+	}
+
+	return  sqlcgen.New(pool)
+}
+
 
 func (r *UserRepository) FindByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
-	row, err := r.q.GetUserByID(ctx, id)
+
+	// retrieve queries
+	q := GetQueries(ctx, r.pool)
+
+	row, err := q.GetUserByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("UserRepository.FindByID: %w", err)
 	}
