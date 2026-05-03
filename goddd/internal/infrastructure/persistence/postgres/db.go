@@ -23,4 +23,3 @@ func Open(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
 	}
 	return pool, nil
 }
- 

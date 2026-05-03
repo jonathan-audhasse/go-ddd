@@ -6,11 +6,12 @@ import (
 
 	"github.com/google/uuid"
 )
- 
-type Repository struct {
-	UserRepo     UserRepository
-}
 
+// HealthRepository for health operation
+type HealthRepository interface {
+	// Ping tries to ping the repository
+	Ping(context.Context) error
+}
 
 // Page carries cursor-based pagination parameters.
 // Limit caps the number of rows returned (max 100).
@@ -19,16 +20,15 @@ type Page struct {
 	Limit  int
 	Cursor uuid.UUID // zero value = first page
 }
- 
+
 // PagedResult wraps a slice of users with the next cursor.
 // NextCursor is nil when there are no further pages.
 type PagedResult struct {
 	Users      []models.User
 	NextCursor *uuid.UUID
 }
- 
-// Repository is the port the domain defines. The infrastructure layer
-// provides the concrete implementation — the domain never imports postgres.
+
+// UserRepository user repository operations
 type UserRepository interface {
 	FindByID(ctx context.Context, id uuid.UUID) (*models.User, error)
 	FindByEmail(ctx context.Context, email string) (*models.User, error)
@@ -37,4 +37,3 @@ type UserRepository interface {
 	Update(ctx context.Context, u *models.User) error
 	Delete(ctx context.Context, id uuid.UUID) error
 }
- 

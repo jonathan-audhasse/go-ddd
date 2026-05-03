@@ -15,30 +15,30 @@ import (
 
 // randomString generates a random string of length n
 func randomString(n int) string {
-    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	k := len(charset)
 
-    res := make([]byte, n)
-    for i := range res {
-        res[i] = charset[rand.Intn(k)]
-    }
-    return string(res)
+	res := make([]byte, n)
+	for i := range res {
+		res[i] = charset[rand.Intn(k)]
+	}
+	return string(res)
 }
 
 // Test ListCustomers
 func TestCustomerServices_List(t *testing.T) {
 	anId, mokcErr := randomString(3), fmt.Errorf("mock error")
 	testCases := []struct {
-		name string
+		name   string
 		userId string
 		expErr error
 	}{
 		{
-			name: "list customers: errors should be catched and wrapped",
+			name:   "list customers: errors should be catched and wrapped",
 			expErr: errors.Wrap(mokcErr, "fail to list customers"),
 		},
 		{
-			name: "list customers OK",
+			name:   "list customers OK",
 			userId: anId,
 			expErr: nil,
 		},
@@ -89,19 +89,19 @@ func TestCustomerServices_Get(t *testing.T) {
 	})
 
 	testCases := []struct {
-		name string
-		id string
+		name   string
+		id     string
 		expErr error
 		expRes models.Customer
 	}{
 		{
-			name: "get a customer: errors should be catched and wrapped",
-			id: "unknowId",
+			name:   "get a customer: errors should be catched and wrapped",
+			id:     "unknowId",
 			expErr: errors.Wrap(mokcErr, "fail to get customer id=unknowId"),
 		},
 		{
-			name: "get customer OK",
-			id: cust.Id,
+			name:   "get customer OK",
+			id:     cust.Id,
 			expErr: nil,
 			expRes: cust,
 		},
@@ -140,23 +140,23 @@ func TestCustomerServices_Delete(t *testing.T) {
 	})
 
 	testCases := []struct {
-		name string
-		id string
+		name   string
+		id     string
 		expErr error
 	}{
 		{
-			name: "delete a customer: errors should be catched and wrapped",
-			id: "unknowId",
+			name:   "delete a customer: errors should be catched and wrapped",
+			id:     "unknowId",
 			expErr: errors.Wrap(mokcErr, "fail to delete customer id=unknowId"),
 		},
 		{
-			name: "delete customer OK",
-			id: anId,
+			name:   "delete customer OK",
+			id:     anId,
 			expErr: nil,
 		},
 	}
 
-		// define the service
+	// define the service
 	services := NewCustomerService(custumerRepo)
 
 	for _, tc := range testCases {
@@ -173,7 +173,6 @@ func TestCustomerServices_Delete(t *testing.T) {
 	}
 }
 
-
 // Test AddCustomer
 func TestCustomerServices_Add(t *testing.T) {
 	nameTriggerErro, mokcErr := "nameTriggerErro", fmt.Errorf("mock error")
@@ -189,23 +188,23 @@ func TestCustomerServices_Add(t *testing.T) {
 	}).Maybe()
 
 	testCases := []struct {
-		name string
-		cust dto.CustomerDTO
+		name   string
+		cust   dto.CustomerDTO
 		expErr error
 	}{
 		{
-			name: "add customer: name should not be empty",
-			cust: dto.CustomerDTO{},
+			name:   "add customer: name should not be empty",
+			cust:   dto.CustomerDTO{},
 			expErr: errors.Wrap(errors.InvalidFormat.New("customer name should not be empty"), "fail to add customer"),
 		},
 		{
-			name: "add customer: errors should be catched and wrapped",
-			cust: dto.CustomerDTO{Name: nameTriggerErro, Email: "a@b.c"},
+			name:   "add customer: errors should be catched and wrapped",
+			cust:   dto.CustomerDTO{Name: nameTriggerErro, Email: "a@b.c"},
 			expErr: errors.Wrap(mokcErr, "fail to add customer ({nameTriggerErro a@b.c})"),
 		},
 		{
-			name: "add customer: errors should be catched and wrapped",
-			cust: dto.CustomerDTO{Name: "Johnny", Email: "a@b.c"},
+			name:   "add customer: errors should be catched and wrapped",
+			cust:   dto.CustomerDTO{Name: "Johnny", Email: "a@b.c"},
 			expErr: nil,
 		},
 	}

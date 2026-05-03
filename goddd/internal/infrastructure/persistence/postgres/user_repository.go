@@ -2,10 +2,12 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/rs/zerolog/log"
 
 	"goddd/internal/domain/models"
 	"goddd/internal/domain/repository"
@@ -13,54 +15,69 @@ import (
 	"goddd/internal/infrastructure/persistence/transaction"
 )
 
-// UserRepository implements domain/user.Repository using sqlc-generated queries.
-type UserRepository struct {
+var (
+	ErrFailedToFindUserById = errors.New("failed to find user by its ID")
+)
+
+// userRepository implements domain/user.Repository using sqlc-generated queries.
+type userRepository struct {
 	pool *pgxpool.Pool
 }
 
-func NewUserRepository(pool *pgxpool.Pool) *UserRepository {
-	return &UserRepository{pool}
+// NewuserRepository instanciate a new user repository
+func NewUserRepository(pool *pgxpool.Pool) repository.UserRepository {
+	return &userRepository{pool}
 }
 
 // retrieve sqlc queries from connection pool.
 // Define the queries from the context transaction if existed.
 // If not create a new one from the connection
-func GetQueries(ctx context.Context, pool *pgxpool.Pool) *sqlcgen.Queries {
+func getQueries(ctx context.Context, pool *pgxpool.Pool) *sqlcgen.Queries {
 	if tx, ok := transaction.GetTx(ctx); ok {
-		return  sqlcgen.New(tx)
+		return sqlcgen.New(tx)
 	}
 
-	return  sqlcgen.New(pool)
+	return sqlcgen.New(pool)
 }
 
+// FindByID retrieve a user by its Id
+func (r *userRepository) FindByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
+	// retrieve queries
+	q := getQueries(ctx, r.pool)
 
-func (r *UserRepository) FindByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
+	logger := log.Ctx(ctx).With().Str("id", id.String()).Logger()
+
+	row, err := q.GetUserByID(ctx, toPgUUID(id))
+	if err != nil {
+		logger.Err(err).Msg("failed to retrieve user by id")
+		return nil, ErrFailedToFindUserById
+	}
+	return toDomain(row), nil
+}
+
+func (r *userRepository) FindByEmail(ctx context.Context, email string) (*models.User, error) {
 
 	// retrieve queries
-	q := GetQueries(ctx, r.pool)
+	q := getQueries(ctx, r.pool)
 
-	row, err := q.GetUserByID(ctx, id)
+	row, err := q.GetUserByEmail(ctx, email)
 	if err != nil {
-		return nil, fmt.Errorf("UserRepository.FindByID: %w", err)
+		return nil, fmt.Errorf("userRepository.FindByEmail: %w", err)
 	}
 	return toDomain(row), nil
 }
 
-func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*models.User, error) {
-	row, err := r.q.GetUserByEmail(ctx, email)
-	if err != nil {
-		return nil, fmt.Errorf("UserRepository.FindByEmail: %w", err)
-	}
-	return toDomain(row), nil
-}
+func (r *userRepository) FindPaged(ctx context.Context, p repository.Page) (repository.PagedResult, error) {
 
-func (r *UserRepository) FindPaged(ctx context.Context, p repository.Page) (repository.PagedResult, error) {
-	rows, err := r.q.ListUsersPaged(ctx, &sqlcgen.ListUsersPagedParams{
-		Cursor: p.Cursor,
-		Limit:  int32(p.Limit) + 1, // fetch one extra to detect whether a next page exists
+	// retrieve queries
+	q := getQueries(ctx, r.pool)
+
+	rows, err := q.ListUsersPaged(ctx, &sqlcgen.ListUsersPagedParams{
+		Column1: toPgUUID(p.Cursor),
+		Limit:   int32(p.Limit) + 1, // fetch one extra to detect whether a next page exists
 	})
 	if err != nil {
-		return repository.PagedResult{}, fmt.Errorf("UserRepository.FindPaged: %w", err)
+		return repository.PagedResult{}, fmt.Errorf("userRepository.FindPaged: %w", err)
 	}
 
 	hasNext := len(rows) > p.Limit
@@ -82,40 +99,49 @@ func (r *UserRepository) FindPaged(ctx context.Context, p repository.Page) (repo
 	return result, nil
 }
 
-func (r *UserRepository) Create(ctx context.Context, u *models.User) error {
-	row, err := r.q.CreateUser(ctx, &sqlcgen.CreateUserParams{
-		ID:           u.ID,
+func (r *userRepository) Create(ctx context.Context, u *models.User) error {
+	// retrieve queries
+	q := getQueries(ctx, r.pool)
+
+	row, err := q.CreateUser(ctx, &sqlcgen.CreateUserParams{
+		ID:           toPgUUID(u.ID),
 		Email:        u.Email,
 		Username:     u.Username,
 		PasswordHash: u.PasswordHash,
-		CreatedAt:    u.CreatedAt,
-		UpdatedAt:    u.UpdatedAt,
+		CreatedAt:    toPgTimestamptz(u.CreatedAt),
+		UpdatedAt:    toPgTimestamptz(u.UpdatedAt),
 	})
 	if err != nil {
-		return fmt.Errorf("UserRepository.Create: %w", err)
+		return fmt.Errorf("userRepository.Create: %w", err)
 	}
 	// Reflect any DB-generated values (e.g. defaults) back into the entity.
 	*u = *toDomain(row)
 	return nil
 }
 
-func (r *UserRepository) Update(ctx context.Context, u *models.User) error {
-	row, err := r.q.UpdateUser(ctx, &sqlcgen.UpdateUserParams{
-		ID:           u.ID,
+func (r *userRepository) Update(ctx context.Context, u *models.User) error {
+	// retrieve queries
+	q := getQueries(ctx, r.pool)
+
+	row, err := q.UpdateUser(ctx, &sqlcgen.UpdateUserParams{
+		ID:           toPgUUID(u.ID),
 		Email:        u.Email,
 		Username:     u.Username,
 		PasswordHash: u.PasswordHash,
 	})
 	if err != nil {
-		return fmt.Errorf("UserRepository.Update: %w", err)
+		return fmt.Errorf("userRepository.Update: %w", err)
 	}
 	*u = *toDomain(row)
 	return nil
 }
 
-func (r *UserRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	if err := r.q.DeleteUser(ctx, id); err != nil {
-		return fmt.Errorf("UserRepository.Delete: %w", err)
+func (r *userRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	// retrieve queries
+	q := getQueries(ctx, r.pool)
+
+	if err := q.DeleteUser(ctx, toPgUUID(id)); err != nil {
+		return fmt.Errorf("userRepository.Delete: %w", err)
 	}
 	return nil
 }
@@ -124,11 +150,11 @@ func (r *UserRepository) Delete(ctx context.Context, id uuid.UUID) error {
 // Keeping this conversion here means the domain never imports sqlcgen.
 func toDomain(u *sqlcgen.User) *models.User {
 	return &models.User{
-		ID:           u.ID,
+		ID:           fromPgUUID(u.ID),
 		Email:        u.Email,
 		Username:     u.Username,
 		PasswordHash: u.PasswordHash,
-		CreatedAt:    u.CreatedAt,
-		UpdatedAt:    u.UpdatedAt,
+		CreatedAt:    u.CreatedAt.Time,
+		UpdatedAt:    u.UpdatedAt.Time,
 	}
 }

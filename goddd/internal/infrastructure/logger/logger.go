@@ -16,13 +16,12 @@ func New(level string) zerolog.Logger {
 		lvl = zerolog.InfoLevel
 	}
 	zerolog.SetGlobalLevel(lvl)
- 
+
 	// Pretty console output — swap to zerolog.New(os.Stderr) for JSON in prod.
 	log.Logger = log.Output(zerolog.ConsoleWriter{
 		Out:        os.Stderr,
 		TimeFormat: time.RFC3339,
 	})
- 
+
 	return log.Logger
 }
- 

@@ -71,11 +71,11 @@ zsh-mode: up ## Mount services for local dev
 #------------#
 
 # make sure sqlc is installed. refer to: https://docs.sqlc.dev/en/latest/overview/install.html
-sqlc-gen: # regenerates sqlcgen/ from queries/users.sql
+sqlc-gen: ## regenerates sqlcgen/ from queries/users.sql
 	cd goddd && sqlc generate
 
-mock-gen: # Generate mocks
+mock-gen: ## Generate mocks
 	cd goddd && mockery --log-level=""
 
-mock-clean: # Clean generated mock files
-	cd goddd && find -name .mocks -print -exec rm -r {} +
+mock-clean: ## Clean generated mock files
+	cd goddd && find -name mocks -print -exec rm -r {} +
