@@ -16,18 +16,22 @@ type healthRepository struct {
 	db *pgxpool.Pool
 }
 
-// NewHealthRepository instanciate new health repository
+// NewHealthRepository instantiate new health repository
 func NewHealthRepository(pool *pgxpool.Pool) repository.HealthRepository {
 	return &healthRepository{db: pool}
 }
 
 // Ping pings DB
 func (r *healthRepository) Ping(ctx context.Context) error {
-	log.Ctx(ctx).Debug().Msg("Jonathan")
+	logger := log.Ctx(ctx)
+	logger.Debug().Msg("try to ping database...")
+	// log.Ctx(ctx).Debug().Msg("try to ping database...")
 	if err := r.db.Ping(ctx); err != nil {
 		log.Ctx(ctx).Err(err).Msg("failed to ping postgres")
 		return ErrFailToPing
 	}
+
+	logger.Debug().Msg("ping database succeed")
 
 	return nil
 }

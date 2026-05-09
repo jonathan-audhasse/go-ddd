@@ -13,7 +13,7 @@ import (
 
 // newMigrate bridges pgxpool → database/sql so go-migrate can use it.
 // pgx/v5/stdlib.OpenDBFromPool wraps the pool without opening a new connection.
-func newMigrate(pool *pgxpool.Pool, migrationsPath string) (*migrate.Migrate, error) {
+func newMigrate(pool *pgxpool.Pool, migrationsPath, schemaName string) (*migrate.Migrate, error) {
 	db := stdlib.OpenDBFromPool(pool)
 
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
@@ -21,7 +21,7 @@ func newMigrate(pool *pgxpool.Pool, migrationsPath string) (*migrate.Migrate, er
 		log.Err(err).Msg("failed to have a database driver")
 		return nil, errors.New("failed to have a database driver")
 	}
-	m, err := migrate.NewWithDatabaseInstance(migrationsPath, "postgres", driver)
+	m, err := migrate.NewWithDatabaseInstance(migrationsPath, schemaName, driver)
 	if err != nil {
 		log.Err(err).Msg("failed to have a new database driver instance")
 		return nil, errors.New("failed to have a new database driver instance")
@@ -31,10 +31,10 @@ func newMigrate(pool *pgxpool.Pool, migrationsPath string) (*migrate.Migrate, er
 
 // Up applies every pending migration in ascending version order.
 // Returns nil if already up to date.
-func Up(pool *pgxpool.Pool, migrationsPath string) error {
+func Up(pool *pgxpool.Pool, migrationsPath, schemaName string) error {
 	logger := log.With().Str("migrationsPath", migrationsPath).Logger()
 	logger.Info().Msg("migrate database up...")
-	m, err := newMigrate(pool, migrationsPath)
+	m, err := newMigrate(pool, migrationsPath, schemaName)
 	if err != nil {
 		return err
 	}
@@ -48,10 +48,10 @@ func Up(pool *pgxpool.Pool, migrationsPath string) error {
 
 // Down rolls back every applied migration, reverting the database to a clean state.
 // Suitable for tests; avoid in production unless you know what you're doing.
-func Down(pool *pgxpool.Pool, migrationsPath string) error {
+func Down(pool *pgxpool.Pool, migrationsPath, schemaName string) error {
 	logger := log.With().Str("migrationsPath", migrationsPath).Logger()
 	logger.Info().Msg("migrate database down...")
-	m, err := newMigrate(pool, migrationsPath)
+	m, err := newMigrate(pool, migrationsPath, schemaName)
 	if err != nil {
 		return err
 	}
@@ -64,10 +64,10 @@ func Down(pool *pgxpool.Pool, migrationsPath string) error {
 }
 
 // Steps applies n migrations (positive = forward, negative = backward).
-func Steps(pool *pgxpool.Pool, migrationsPath string, n int) error {
+func Steps(pool *pgxpool.Pool, migrationsPath, schemaName string, n int) error {
 	logger := log.With().Str("migrationsPath", migrationsPath).Int("n", n).Logger()
 	logger.Info().Msg("migrate database steps up ...")
-	m, err := newMigrate(pool, migrationsPath)
+	m, err := newMigrate(pool, migrationsPath, schemaName)
 	if err != nil {
 		return err
 	}
@@ -80,8 +80,8 @@ func Steps(pool *pgxpool.Pool, migrationsPath string, n int) error {
 
 // Version returns the currently applied migration version and whether the
 // database is in a dirty state (a previous migration failed mid-way).
-func Version(pool *pgxpool.Pool, migrationsPath string) (version uint, dirty bool, err error) {
-	m, err := newMigrate(pool, migrationsPath)
+func Version(pool *pgxpool.Pool, migrationsPath, schemaName string) (version uint, dirty bool, err error) {
+	m, err := newMigrate(pool, migrationsPath, schemaName)
 	if err != nil {
 		return 0, false, err
 	}

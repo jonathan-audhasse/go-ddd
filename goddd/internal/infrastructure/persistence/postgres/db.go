@@ -11,7 +11,7 @@ import (
 // Open creates and validates a pgxpool connection pool.
 // pgxpool is safe for concurrent use and is the recommended default for servers.
 func Open(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
-	logger := log.With().Str("dsn", dsn).Logger()
+	logger := log.With().Str("dataSourceName", dsn).Logger()
 	logger.Info().Msg("opening connection to database")
 	pool, err := pgxpool.New(ctx, dsn)
 	if err != nil {

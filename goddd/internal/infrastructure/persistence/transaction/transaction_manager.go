@@ -35,6 +35,11 @@ func GetTx(ctx context.Context) (pgx.Tx, bool) {
 	return tx, ok
 }
 
+// WithTx Put tx into context
+func WithTx(ctx context.Context, tx pgx.Tx) context.Context {
+	return context.WithValue(ctx, txKey{}, tx)
+}
+
 // Do run the function `fn` around an a transation
 func (m *transactionManager) Do(ctx context.Context, fn func(ctx context.Context) error) error {
 	logger := log.Ctx(ctx)
@@ -49,7 +54,7 @@ func (m *transactionManager) Do(ctx context.Context, fn func(ctx context.Context
 	defer tx.Rollback(ctx)
 
 	// Put tx into context (so repos can pick it up)
-	ctxWithTx := context.WithValue(ctx, txKey{}, tx)
+	ctxWithTx := WithTx(ctx, tx)
 
 	if err := fn(ctxWithTx); err != nil {
 		logger.Err(err).Msg("failed to commit transaction")

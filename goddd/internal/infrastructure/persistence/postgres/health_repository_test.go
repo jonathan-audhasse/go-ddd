@@ -10,8 +10,6 @@ import (
 )
 
 func TestHealthRepository_Ping(t *testing.T) {
-	initTestLogger()
-
 	ctx := log.Logger.WithContext(context.Background())
 
 	// set repo

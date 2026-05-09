@@ -24,7 +24,7 @@ type userRepository struct {
 	pool *pgxpool.Pool
 }
 
-// NewuserRepository instanciate a new user repository
+// NewUserRepository instantiate a new user repository
 func NewUserRepository(pool *pgxpool.Pool) repository.UserRepository {
 	return &userRepository{pool}
 }
@@ -47,12 +47,18 @@ func (r *userRepository) FindByID(ctx context.Context, id uuid.UUID) (*models.Us
 
 	logger := log.Ctx(ctx).With().Str("id", id.String()).Logger()
 
-	row, err := q.GetUserByID(ctx, toPgUUID(id))
+	logger.Debug().Msg("retrieving user by id...")
+
+	row, err := q.GetUserByID(ctx, ToPgUUID(id))
 	if err != nil {
 		logger.Err(err).Msg("failed to retrieve user by id")
 		return nil, ErrFailedToFindUserById
 	}
-	return toDomain(row), nil
+
+	res := toDomain(row)
+
+	logger.Debug().Msg("user found")
+	return res, nil
 }
 
 func (r *userRepository) FindByEmail(ctx context.Context, email string) (*models.User, error) {
@@ -73,7 +79,7 @@ func (r *userRepository) FindPaged(ctx context.Context, p repository.Page) (repo
 	q := getQueries(ctx, r.pool)
 
 	rows, err := q.ListUsersPaged(ctx, &sqlcgen.ListUsersPagedParams{
-		Column1: toPgUUID(p.Cursor),
+		Column1: ToPgUUID(p.Cursor),
 		Limit:   int32(p.Limit) + 1, // fetch one extra to detect whether a next page exists
 	})
 	if err != nil {
@@ -104,12 +110,12 @@ func (r *userRepository) Create(ctx context.Context, u *models.User) error {
 	q := getQueries(ctx, r.pool)
 
 	row, err := q.CreateUser(ctx, &sqlcgen.CreateUserParams{
-		ID:           toPgUUID(u.ID),
+		ID:           ToPgUUID(u.ID),
 		Email:        u.Email,
 		Username:     u.Username,
 		PasswordHash: u.PasswordHash,
-		CreatedAt:    toPgTimestamptz(u.CreatedAt),
-		UpdatedAt:    toPgTimestamptz(u.UpdatedAt),
+		CreatedAt:    ToPgTimestamptz(u.CreatedAt),
+		UpdatedAt:    ToPgTimestamptz(u.UpdatedAt),
 	})
 	if err != nil {
 		return fmt.Errorf("userRepository.Create: %w", err)
@@ -124,7 +130,7 @@ func (r *userRepository) Update(ctx context.Context, u *models.User) error {
 	q := getQueries(ctx, r.pool)
 
 	row, err := q.UpdateUser(ctx, &sqlcgen.UpdateUserParams{
-		ID:           toPgUUID(u.ID),
+		ID:           ToPgUUID(u.ID),
 		Email:        u.Email,
 		Username:     u.Username,
 		PasswordHash: u.PasswordHash,
@@ -140,7 +146,7 @@ func (r *userRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	// retrieve queries
 	q := getQueries(ctx, r.pool)
 
-	if err := q.DeleteUser(ctx, toPgUUID(id)); err != nil {
+	if err := q.DeleteUser(ctx, ToPgUUID(id)); err != nil {
 		return fmt.Errorf("userRepository.Delete: %w", err)
 	}
 	return nil
@@ -150,7 +156,7 @@ func (r *userRepository) Delete(ctx context.Context, id uuid.UUID) error {
 // Keeping this conversion here means the domain never imports sqlcgen.
 func toDomain(u *sqlcgen.User) *models.User {
 	return &models.User{
-		ID:           fromPgUUID(u.ID),
+		ID:           FromPgUUID(u.ID),
 		Email:        u.Email,
 		Username:     u.Username,
 		PasswordHash: u.PasswordHash,
