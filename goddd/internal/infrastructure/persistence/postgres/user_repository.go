@@ -110,12 +110,11 @@ func (r *userRepository) Create(ctx context.Context, u *models.User) error {
 	q := getQueries(ctx, r.pool)
 
 	row, err := q.CreateUser(ctx, &sqlcgen.CreateUserParams{
-		ID:           ToPgUUID(u.ID),
-		Email:        u.Email,
-		Username:     u.Username,
-		PasswordHash: u.PasswordHash,
-		CreatedAt:    ToPgTimestamptz(u.CreatedAt),
-		UpdatedAt:    ToPgTimestamptz(u.UpdatedAt),
+		ID:        ToPgUUID(u.ID),
+		Email:     u.Email,
+		Username:  u.Username,
+		CreatedAt: ToPgTimestamptz(u.CreatedAt),
+		UpdatedAt: ToPgTimestamptz(u.UpdatedAt),
 	})
 	if err != nil {
 		return fmt.Errorf("userRepository.Create: %w", err)
@@ -130,10 +129,9 @@ func (r *userRepository) Update(ctx context.Context, u *models.User) error {
 	q := getQueries(ctx, r.pool)
 
 	row, err := q.UpdateUser(ctx, &sqlcgen.UpdateUserParams{
-		ID:           ToPgUUID(u.ID),
-		Email:        u.Email,
-		Username:     u.Username,
-		PasswordHash: u.PasswordHash,
+		ID:       ToPgUUID(u.ID),
+		Email:    u.Email,
+		Username: u.Username,
 	})
 	if err != nil {
 		return fmt.Errorf("userRepository.Update: %w", err)
@@ -156,11 +154,10 @@ func (r *userRepository) Delete(ctx context.Context, id uuid.UUID) error {
 // Keeping this conversion here means the domain never imports sqlcgen.
 func toDomain(u *sqlcgen.User) *models.User {
 	return &models.User{
-		ID:           FromPgUUID(u.ID),
-		Email:        u.Email,
-		Username:     u.Username,
-		PasswordHash: u.PasswordHash,
-		CreatedAt:    u.CreatedAt.Time,
-		UpdatedAt:    u.UpdatedAt.Time,
+		ID:        FromPgUUID(u.ID),
+		Email:     u.Email,
+		Username:  u.Username,
+		CreatedAt: u.CreatedAt.Time,
+		UpdatedAt: u.UpdatedAt.Time,
 	}
 }

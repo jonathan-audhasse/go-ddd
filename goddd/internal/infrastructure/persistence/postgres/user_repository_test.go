@@ -6,11 +6,21 @@ import (
 	"testing"
 	"time"
 
+	"github.com/brianvoe/gofakeit/v7"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/require"
 )
+
+func TestUserRepository_FindByID_NotFound(t *testing.T) {
+	ctx := log.Logger.WithContext(t.Context())
+
+	repo := postgres.NewUserRepository(testDB)
+
+	_, err := repo.FindByID(ctx, uuid.MustParse(gofakeit.UUID()))
+	require.ErrorIs(t, err, postgres.ErrFailedToFindUserById)
+}
 
 func TestUserRepository_FindByID(t *testing.T) {
 	ctx := log.Logger.WithContext(t.Context())
@@ -22,19 +32,17 @@ func TestUserRepository_FindByID(t *testing.T) {
 
 	// insert user...
 	id := uuid.New()
-	// now := time.Now().UTC()
 	now := pgtype.Timestamptz{
 		Time:  time.Now().UTC(),
 		Valid: true,
 	}
 
 	_, err := q.CreateUser(ctx, &sqlcgen.CreateUserParams{
-		ID:           postgres.ToPgUUID(id), // or postgres.toPgUUID if not exported
-		Email:        "john@example.com",
-		Username:     "john",
-		PasswordHash: "hash",
-		CreatedAt:    now,
-		UpdatedAt:    now,
+		ID:        postgres.ToPgUUID(id), // or postgres.toPgUUID if not exported
+		Email:     "john@example.com",
+		Username:  "john",
+		CreatedAt: now,
+		UpdatedAt: now,
 	})
 	require.NoError(t, err)
 
@@ -47,5 +55,4 @@ func TestUserRepository_FindByID(t *testing.T) {
 	require.Equal(t, id, user.ID)
 	require.Equal(t, "john@example.com", user.Email)
 	require.Equal(t, "john", user.Username)
-	require.Equal(t, "hash", user.PasswordHash)
 }

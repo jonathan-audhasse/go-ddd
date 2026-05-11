@@ -8,10 +8,9 @@ import (
 
 // User is the core domain entity. No infrastructure concerns here.
 type User struct {
-	ID           uuid.UUID
-	Email        string
-	Username     string
-	PasswordHash string
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	ID        uuid.UUID
+	Email     string
+	Username  string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }

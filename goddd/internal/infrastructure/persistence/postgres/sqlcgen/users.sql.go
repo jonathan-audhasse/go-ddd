@@ -27,22 +27,20 @@ INSERT INTO users (
     id,
     email,
     username,
-    password_hash,
     created_at,
     updated_at
 ) VALUES (
-    $1, $2, $3, $4, $5, $6
+    $1, $2, $3, $4, $5
 )
-RETURNING id, email, username, password_hash, created_at, updated_at
+RETURNING id, email, username, created_at, updated_at
 `
 
 type CreateUserParams struct {
-	ID           pgtype.UUID
-	Email        string
-	Username     string
-	PasswordHash string
-	CreatedAt    pgtype.Timestamptz
-	UpdatedAt    pgtype.Timestamptz
+	ID        pgtype.UUID
+	Email     string
+	Username  string
+	CreatedAt pgtype.Timestamptz
+	UpdatedAt pgtype.Timestamptz
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg *CreateUserParams) (*User, error) {
@@ -50,7 +48,6 @@ func (q *Queries) CreateUser(ctx context.Context, arg *CreateUserParams) (*User,
 		arg.ID,
 		arg.Email,
 		arg.Username,
-		arg.PasswordHash,
 		arg.CreatedAt,
 		arg.UpdatedAt,
 	)
@@ -59,7 +56,6 @@ func (q *Queries) CreateUser(ctx context.Context, arg *CreateUserParams) (*User,
 		&i.ID,
 		&i.Email,
 		&i.Username,
-		&i.PasswordHash,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -77,7 +73,7 @@ func (q *Queries) DeleteUser(ctx context.Context, id pgtype.UUID) error {
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, username, password_hash, created_at, updated_at
+SELECT id, email, username, created_at, updated_at
 FROM users
 WHERE email = $1
 `
@@ -89,7 +85,6 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (*User, erro
 		&i.ID,
 		&i.Email,
 		&i.Username,
-		&i.PasswordHash,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -97,7 +92,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (*User, erro
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, email, username, password_hash, created_at, updated_at
+SELECT id, email, username, created_at, updated_at
 FROM users
 WHERE id = $1
 `
@@ -109,7 +104,6 @@ func (q *Queries) GetUserByID(ctx context.Context, id pgtype.UUID) (*User, error
 		&i.ID,
 		&i.Email,
 		&i.Username,
-		&i.PasswordHash,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -117,7 +111,7 @@ func (q *Queries) GetUserByID(ctx context.Context, id pgtype.UUID) (*User, error
 }
 
 const listUsersPaged = `-- name: ListUsersPaged :many
-SELECT id, email, username, password_hash, created_at, updated_at
+SELECT id, email, username, created_at, updated_at
 FROM users
 WHERE (
     $1::uuid = '00000000-0000-0000-0000-000000000000'::uuid
@@ -146,7 +140,6 @@ func (q *Queries) ListUsersPaged(ctx context.Context, arg *ListUsersPagedParams)
 			&i.ID,
 			&i.Email,
 			&i.Username,
-			&i.PasswordHash,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -165,32 +158,24 @@ UPDATE users
 SET
     email         = $1,
     username      = $2,
-    password_hash = $3,
     updated_at    = now()
-WHERE id = $4
-RETURNING id, email, username, password_hash, created_at, updated_at
+WHERE id = $3
+RETURNING id, email, username, created_at, updated_at
 `
 
 type UpdateUserParams struct {
-	Email        string
-	Username     string
-	PasswordHash string
-	ID           pgtype.UUID
+	Email    string
+	Username string
+	ID       pgtype.UUID
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg *UpdateUserParams) (*User, error) {
-	row := q.db.QueryRow(ctx, updateUser,
-		arg.Email,
-		arg.Username,
-		arg.PasswordHash,
-		arg.ID,
-	)
+	row := q.db.QueryRow(ctx, updateUser, arg.Email, arg.Username, arg.ID)
 	var i User
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
 		&i.Username,
-		&i.PasswordHash,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

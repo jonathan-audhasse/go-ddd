@@ -1,15 +1,15 @@
 -- name: GetUserByID :one
-SELECT id, email, username, password_hash, created_at, updated_at
+SELECT id, email, username, created_at, updated_at
 FROM users
 WHERE id = $1;
  
 -- name: GetUserByEmail :one
-SELECT id, email, username, password_hash, created_at, updated_at
+SELECT id, email, username, created_at, updated_at
 FROM users
 WHERE email = $1;
  
 -- name: ListUsersPaged :many
-SELECT id, email, username, password_hash, created_at, updated_at
+SELECT id, email, username, created_at, updated_at
 FROM users
 WHERE (
     $1::uuid = '00000000-0000-0000-0000-000000000000'::uuid
@@ -27,11 +27,10 @@ INSERT INTO users (
     id,
     email,
     username,
-    password_hash,
     created_at,
     updated_at
 ) VALUES (
-    $1, $2, $3, $4, $5, $6
+    $1, $2, $3, $4, $5
 )
 RETURNING *;
  
@@ -40,9 +39,8 @@ UPDATE users
 SET
     email         = $1,
     username      = $2,
-    password_hash = $3,
     updated_at    = now()
-WHERE id = $4
+WHERE id = $3
 RETURNING *;
  
 -- name: DeleteUser :exec
