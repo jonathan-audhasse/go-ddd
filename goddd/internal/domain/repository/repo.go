@@ -31,9 +31,8 @@ type PagedResult struct {
 // UserRepository user repository operations
 type UserRepository interface {
 	FindByID(ctx context.Context, id uuid.UUID) (*models.User, error)
-	FindByEmail(ctx context.Context, email string) (*models.User, error)
 	FindPaged(ctx context.Context, p Page) (PagedResult, error)
-	Create(ctx context.Context, u *models.User) error
-	Update(ctx context.Context, u *models.User) error
+	Create(ctx context.Context, user models.NewUser) (models.User, error)
+	Update(ctx context.Context, user models.User) (models.User, error)
 	Delete(ctx context.Context, id uuid.UUID) error
 }

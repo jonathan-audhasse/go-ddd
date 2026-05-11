@@ -3,11 +3,6 @@ SELECT id, email, username, created_at, updated_at
 FROM users
 WHERE id = $1;
  
--- name: GetUserByEmail :one
-SELECT id, email, username, created_at, updated_at
-FROM users
-WHERE email = $1;
- 
 -- name: ListUsersPaged :many
 SELECT id, email, username, created_at, updated_at
 FROM users
@@ -23,15 +18,8 @@ LIMIT $2;
 SELECT COUNT(*) FROM users;
  
 -- name: CreateUser :one
-INSERT INTO users (
-    id,
-    email,
-    username,
-    created_at,
-    updated_at
-) VALUES (
-    $1, $2, $3, $4, $5
-)
+INSERT INTO users (email, username) 
+VALUES ($1, $2)
 RETURNING *;
  
 -- name: UpdateUser :one

@@ -5,7 +5,7 @@
 BEGIN;
 
 CREATE TABLE IF NOT EXISTS users (
-    id          UUID not null primary key,
+    id          UUID primary key DEFAULT (gen_random_uuid()),
     email       TEXT NOT NULL UNIQUE,
     username    TEXT NOT NULL UNIQUE,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),

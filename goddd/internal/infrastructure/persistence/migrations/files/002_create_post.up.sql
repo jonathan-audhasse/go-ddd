@@ -5,7 +5,7 @@
 BEGIN;
  
 CREATE TABLE IF NOT EXISTS posts (
-    id         UUID        PRIMARY KEY,
+    id         UUID        PRIMARY KEY DEFAULT (gen_random_uuid()),
     user_id    UUID        NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     title      TEXT        NOT NULL CHECK (char_length(title) BETWEEN 1 AND 255),
     body       TEXT        NOT NULL DEFAULT '',

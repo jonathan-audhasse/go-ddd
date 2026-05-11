@@ -6,7 +6,13 @@ import (
 	"github.com/google/uuid"
 )
 
-// User is the core domain entity. No infrastructure concerns here.
+// NewUser to create new users
+type NewUser struct {
+	Email    string
+	Username string
+}
+
+// User is the core domain entity.
 type User struct {
 	ID        uuid.UUID
 	Email     string

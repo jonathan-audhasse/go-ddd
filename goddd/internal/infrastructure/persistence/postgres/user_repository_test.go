@@ -1,6 +1,7 @@
 package postgres_test
 
 import (
+	"goddd/internal/domain/models"
 	"goddd/internal/infrastructure/persistence/postgres"
 	"goddd/internal/infrastructure/persistence/postgres/sqlcgen"
 	"testing"
@@ -8,7 +9,6 @@ import (
 
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/require"
 )
@@ -31,28 +31,46 @@ func TestUserRepository_FindByID(t *testing.T) {
 	q := sqlcgen.New(tx)
 
 	// insert user...
-	id := uuid.New()
-	now := pgtype.Timestamptz{
-		Time:  time.Now().UTC(),
-		Valid: true,
-	}
-
-	_, err := q.CreateUser(ctx, &sqlcgen.CreateUserParams{
-		ID:        postgres.ToPgUUID(id), // or postgres.toPgUUID if not exported
-		Email:     "john@example.com",
-		Username:  "john",
-		CreatedAt: now,
-		UpdatedAt: now,
+	user, err := q.CreateUser(ctx, &sqlcgen.CreateUserParams{
+		Email:    gofakeit.Email(),
+		Username: gofakeit.Username(),
 	})
 	require.NoError(t, err)
 
 	repo := postgres.NewUserRepository(testDB)
-
-	user, err := repo.FindByID(ctx, id)
+	id := postgres.FromPgUUID(user.ID)
+	res, err := repo.FindByID(ctx, id)
 	require.NoError(t, err)
 
 	// assert
-	require.Equal(t, id, user.ID)
-	require.Equal(t, "john@example.com", user.Email)
-	require.Equal(t, "john", user.Username)
+	require.Equal(t, id, res.ID)
+	require.Equal(t, user.Email, res.Email)
+	require.Equal(t, user.Username, res.Username)
+}
+
+func TestUserRepository_Create_(t *testing.T) {
+	ctx := log.Logger.WithContext(t.Context())
+	ctx, _, rollback := withTx(t, ctx, testDB)
+
+	defer rollback()
+
+	repo := postgres.NewUserRepository(testDB)
+	user := models.NewUser{Email: gofakeit.Email(), Username: gofakeit.Username()}
+
+	now := time.Now()
+
+	// insert user...
+	res, err := repo.Create(ctx, user)
+	require.NoError(t, err)
+
+	// assert user has been added
+	u, err := repo.FindByID(ctx, res.ID)
+	require.NoError(t, err)
+	require.NotEmpty(t, u)
+
+	// assert
+	require.Equal(t, user.Email, res.Email)
+	require.Equal(t, user.Username, res.Username)
+	require.WithinDuration(t, res.CreatedAt, now, 10*time.Millisecond)
+	require.WithinDuration(t, res.UpdatedAt, now, 10*time.Millisecond)
 }
