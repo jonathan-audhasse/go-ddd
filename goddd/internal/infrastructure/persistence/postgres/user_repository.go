@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog/log"
 
@@ -15,9 +16,15 @@ import (
 	"goddd/internal/infrastructure/persistence/transaction"
 )
 
+const usersEmailKey = "users_email_key"
+
 var (
-	ErrFailedToFindUserById = errors.New("failed to find user by its ID")
-	ErrFailedToCreateUser   = errors.New("failed to create a user")
+	ErrUserNotFound          = errors.New("user not found")
+	ErrFailedToFindUserById  = errors.New("failed to find user by its ID")
+	ErrFailedToCreateUser    = errors.New("failed to create a user")
+	ErrUserEmailAlreadyExist = errors.New("failed to create a user: the email already exists")
+	ErrFailedToUpdateUser    = errors.New("failed to update user")
+	ErrFailedToDeleteUser    = errors.New("failed to delete user")
 )
 
 // userRepository implements domain/user.Repository using sqlc-generated queries.
@@ -51,6 +58,10 @@ func (r *userRepository) FindByID(ctx context.Context, id uuid.UUID) (*models.Us
 	logger.Debug().Msg("retrieving user by id...")
 
 	row, err := q.GetUserByID(ctx, ToPgUUID(id))
+	if err != nil && err.Error() == noRowErrMessage {
+		logger.Err(err).Msg("user not found")
+		return nil, ErrUserNotFound
+	}
 	if err != nil {
 		logger.Err(err).Msg("failed to retrieve user by id")
 		return nil, ErrFailedToFindUserById
@@ -94,7 +105,7 @@ func (r *userRepository) FindPaged(ctx context.Context, p repository.Page) (repo
 	return result, nil
 }
 
-// Create add a new user to repository
+// Create adds a new user to repository
 func (r *userRepository) Create(ctx context.Context, newUser models.NewUser) (models.User, error) {
 	// retrieve queries
 	q := getQueries(ctx, r.pool)
@@ -109,6 +120,15 @@ func (r *userRepository) Create(ctx context.Context, newUser models.NewUser) (mo
 	})
 	if err != nil {
 		log.Err(err).Msg("failed to add user to repo")
+
+		var pqErr *pgconn.PgError
+		if errors.As(err, &pqErr) {
+			// email already exists
+			if pqErr.Code == uniqueConstraintViolation && pqErr.ConstraintName == usersEmailKey {
+				return models.User{}, ErrUserEmailAlreadyExist
+			}
+		}
+
 		return models.User{}, ErrFailedToCreateUser
 	}
 	// Reflect any DB-generated values (e.g. defaults).
@@ -119,29 +139,50 @@ func (r *userRepository) Create(ctx context.Context, newUser models.NewUser) (mo
 	return res, nil
 }
 
-func (r *userRepository) Update(ctx context.Context, u models.User) (models.User, error) {
+// Update updates the user data
+func (r *userRepository) Update(ctx context.Context, user models.User) (models.User, error) {
 	// retrieve queries
 	q := getQueries(ctx, r.pool)
 
+	logger := log.Ctx(ctx).With().Any("user", user).Logger()
+
+	logger.Debug().Msg("updating user repo data...")
+
 	row, err := q.UpdateUser(ctx, &sqlcgen.UpdateUserParams{
-		ID:       ToPgUUID(u.ID),
-		Email:    u.Email,
-		Username: u.Username,
+		ID:       ToPgUUID(user.ID),
+		Email:    user.Email,
+		Username: user.Username,
 	})
 	if err != nil {
-		return models.User{}, fmt.Errorf("userRepository.Update: %w", err)
+		log.Err(err).Msg("failed to update user repo")
+
+		var pqErr *pgconn.PgError
+		if errors.As(err, &pqErr) {
+			// email already exists
+			if pqErr.Code == uniqueConstraintViolation && pqErr.ConstraintName == usersEmailKey {
+				return models.User{}, ErrUserEmailAlreadyExist
+			}
+		}
+
+		return models.User{}, ErrFailedToUpdateUser
 	}
 	res := toDomain(row)
 
 	return res, nil
 }
 
+// Delete deletes a user
 func (r *userRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	// retrieve queries
 	q := getQueries(ctx, r.pool)
 
+	logger := log.Ctx(ctx).With().Str("user_id", id.String()).Logger()
+
+	logger.Debug().Msg("deleting user from repo...")
+
 	if err := q.DeleteUser(ctx, ToPgUUID(id)); err != nil {
-		return fmt.Errorf("userRepository.Delete: %w", err)
+		logger.Err(err).Msg("failed to delete user")
+		return ErrFailedToDeleteUser
 	}
 	return nil
 }
@@ -150,7 +191,7 @@ func (r *userRepository) Delete(ctx context.Context, id uuid.UUID) error {
 // Keeping this conversion here means the domain never imports sqlcgen.
 func toDomain(u *sqlcgen.User) models.User {
 	return models.User{
-		ID:        FromPgUUID(u.ID),
+		ID:        u.ID.Bytes,
 		Email:     u.Email,
 		Username:  u.Username,
 		CreatedAt: u.CreatedAt.Time,

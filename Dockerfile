@@ -12,7 +12,8 @@ RUN cd goddd && \
     go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.30.0 && \ 
     go install golang.org/x/tools/cmd/goimports@latest && \
     go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest && \
-    go install golang.org/x/tools/gopls@latest
+    go install golang.org/x/tools/gopls@latest && \
+    go install github.com/go-delve/delve/cmd/dlv@latest
 
 RUN cd goddd && go mod tidy
 #run server
