@@ -18,15 +18,6 @@ import (
 
 const usersEmailKey = "users_email_key"
 
-var (
-	ErrUserNotFound          = errors.New("user not found")
-	ErrFailedToFindUserById  = errors.New("failed to find user by its ID")
-	ErrFailedToCreateUser    = errors.New("failed to create a user")
-	ErrUserEmailAlreadyExist = errors.New("failed to create a user: the email already exists")
-	ErrFailedToUpdateUser    = errors.New("failed to update user")
-	ErrFailedToDeleteUser    = errors.New("failed to delete user")
-)
-
 // userRepository implements domain/user.Repository using sqlc-generated queries.
 type userRepository struct {
 	pool *pgxpool.Pool
@@ -60,11 +51,11 @@ func (r *userRepository) FindByID(ctx context.Context, id uuid.UUID) (*models.Us
 	row, err := q.GetUserByID(ctx, ToPgUUID(id))
 	if err != nil && err.Error() == noRowErrMessage {
 		logger.Err(err).Msg("user not found")
-		return nil, ErrUserNotFound
+		return nil, repository.ErrUserNotFound
 	}
 	if err != nil {
 		logger.Err(err).Msg("failed to retrieve user by id")
-		return nil, ErrFailedToFindUserById
+		return nil, repository.ErrFailedToFindUserById
 	}
 
 	res := toDomain(row)
@@ -125,11 +116,11 @@ func (r *userRepository) Create(ctx context.Context, newUser models.NewUser) (mo
 		if errors.As(err, &pqErr) {
 			// email already exists
 			if pqErr.Code == uniqueConstraintViolation && pqErr.ConstraintName == usersEmailKey {
-				return models.User{}, ErrUserEmailAlreadyExist
+				return models.User{}, repository.ErrUserEmailAlreadyExist
 			}
 		}
 
-		return models.User{}, ErrFailedToCreateUser
+		return models.User{}, repository.ErrFailedToCreateUser
 	}
 	// Reflect any DB-generated values (e.g. defaults).
 	res := toDomain(row)
@@ -160,11 +151,11 @@ func (r *userRepository) Update(ctx context.Context, user models.User) (models.U
 		if errors.As(err, &pqErr) {
 			// email already exists
 			if pqErr.Code == uniqueConstraintViolation && pqErr.ConstraintName == usersEmailKey {
-				return models.User{}, ErrUserEmailAlreadyExist
+				return models.User{}, repository.ErrUserEmailAlreadyExist
 			}
 		}
 
-		return models.User{}, ErrFailedToUpdateUser
+		return models.User{}, repository.ErrFailedToUpdateUser
 	}
 	res := toDomain(row)
 
@@ -182,7 +173,7 @@ func (r *userRepository) Delete(ctx context.Context, id uuid.UUID) error {
 
 	if err := q.DeleteUser(ctx, ToPgUUID(id)); err != nil {
 		logger.Err(err).Msg("failed to delete user")
-		return ErrFailedToDeleteUser
+		return repository.ErrFailedToDeleteUser
 	}
 	return nil
 }

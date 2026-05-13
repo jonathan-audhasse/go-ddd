@@ -3,12 +3,11 @@ package transaction
 import (
 	"context"
 	"errors"
-	"goddd/internal/application"
-
-	"github.com/rs/zerolog/log"
+	"goddd/internal/application/transaction"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/rs/zerolog/log"
 )
 
 var (
@@ -25,7 +24,7 @@ type transactionManager struct {
 }
 
 // NewTransactionManager define a new instance of TransactionManager
-func NewTransactionManager(pool *pgxpool.Pool) application.TransactionManager {
+func NewTransactionManager(pool *pgxpool.Pool) transaction.TransactionManager {
 	return &transactionManager{pool: pool}
 }
 

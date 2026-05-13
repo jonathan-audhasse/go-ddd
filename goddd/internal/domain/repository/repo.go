@@ -2,10 +2,28 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"goddd/internal/domain/models"
 
 	"github.com/google/uuid"
 )
+
+var (
+	// Error linked to Health
+	ErrFailToPing = errors.New("failed to ping repository")
+	// Error linked to User
+	ErrUserNotFound          = errors.New("user not found")
+	ErrFailedToFindUserById  = errors.New("failed to find user by its ID")
+	ErrFailedToCreateUser    = errors.New("failed to create a user")
+	ErrUserEmailAlreadyExist = errors.New("failed to create a user: the email already exists")
+	ErrFailedToUpdateUser    = errors.New("failed to update user")
+	ErrFailedToDeleteUser    = errors.New("failed to delete user")
+)
+
+type Repository struct {
+	HealthRepo HealthRepository
+	UserRepo   UserRepository
+}
 
 // HealthRepository for health operation
 type HealthRepository interface {

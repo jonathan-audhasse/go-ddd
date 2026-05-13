@@ -2,6 +2,7 @@ package postgres_test
 
 import (
 	"goddd/internal/domain/models"
+	"goddd/internal/domain/repository"
 	"goddd/internal/infrastructure/persistence/postgres"
 	"goddd/internal/infrastructure/persistence/postgres/sqlcgen"
 	"testing"
@@ -20,7 +21,7 @@ func TestUserRepository_FindByID_NotFound(t *testing.T) {
 	repo := postgres.NewUserRepository(testDB)
 
 	_, err := repo.FindByID(ctx, uuid.MustParse(gofakeit.UUID()))
-	assert.ErrorIs(t, err, postgres.ErrUserNotFound)
+	assert.ErrorIs(t, err, repository.ErrUserNotFound)
 }
 
 func TestUserRepository_FindByID(t *testing.T) {
@@ -76,7 +77,7 @@ func TestUserRepository_Create(t *testing.T) {
 
 	// try add the same user twice
 	_, err = repo.Create(ctx, user)
-	require.Error(t, err, postgres.ErrUserEmailAlreadyExist)
+	require.Error(t, err, repository.ErrUserEmailAlreadyExist)
 }
 
 func TestUserRepository_Update_Unknown_User(t *testing.T) {
@@ -156,7 +157,7 @@ func TestUserRepository_Update_Email_Already_Exists(t *testing.T) {
 
 	// try to update the user
 	_, err = repo.Update(ctx, user)
-	require.ErrorIs(t, err, postgres.ErrUserEmailAlreadyExist)
+	require.ErrorIs(t, err, repository.ErrUserEmailAlreadyExist)
 }
 
 func TestUserRepository_Delete_Unknown_User(t *testing.T) {
@@ -194,5 +195,5 @@ func TestUserRepository_Delete(t *testing.T) {
 
 	// assert user is not found
 	_, err = repo.FindByID(ctx, user.ID.Bytes)
-	assert.ErrorIs(t, err, postgres.ErrUserNotFound)
+	assert.ErrorIs(t, err, repository.ErrUserNotFound)
 }
