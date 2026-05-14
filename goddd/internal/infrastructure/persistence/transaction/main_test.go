@@ -1,4 +1,4 @@
-package postgres_test
+package transaction_test
 
 import (
 	"context"

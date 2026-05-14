@@ -3,9 +3,9 @@ package postgres
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog/log"
@@ -17,6 +17,11 @@ import (
 )
 
 const usersEmailKey = "users_email_key"
+
+var (
+	ErrFailedToBulkInsert = errors.New("failed to bulk insert users")
+	ErrFailedToRetrieveTx = errors.New("failed to retrieve transaction")
+)
 
 // userRepository implements domain/user.Repository using sqlc-generated queries.
 type userRepository struct {
@@ -41,12 +46,12 @@ func getQueries(ctx context.Context, pool *pgxpool.Pool) *sqlcgen.Queries {
 
 // FindByID retrieve a user by its Id
 func (r *userRepository) FindByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
-	// retrieve queries
-	q := getQueries(ctx, r.pool)
-
 	logger := log.Ctx(ctx).With().Str("id", id.String()).Logger()
 
 	logger.Debug().Msg("retrieving user by id...")
+
+	// retrieve queries
+	q := getQueries(ctx, r.pool)
 
 	row, err := q.GetUserByID(ctx, ToPgUUID(id))
 	if err != nil && err.Error() == noRowErrMessage {
@@ -64,46 +69,57 @@ func (r *userRepository) FindByID(ctx context.Context, id uuid.UUID) (*models.Us
 	return &res, nil
 }
 
-func (r *userRepository) FindPaged(ctx context.Context, p repository.Page) (repository.PagedResult, error) {
+// FindPaged list users from a page pointed by a cursor.
+// It returns a limit of user and the next cursor for the following queries
+func (r *userRepository) FindPaged(ctx context.Context, page repository.Page) (repository.PagedResult, error) {
+
+	logger := log.Ctx(ctx).With().
+		Str("cursor", page.Cursor.String()).
+		Int("limit", page.Limit).
+		Logger()
+
+	logger.Debug().Msg("listing users...")
 
 	// retrieve queries
 	q := getQueries(ctx, r.pool)
 
 	rows, err := q.ListUsersPaged(ctx, &sqlcgen.ListUsersPagedParams{
-		Column1: ToPgUUID(p.Cursor),
-		Limit:   int32(p.Limit) + 1, // fetch one extra to detect whether a next page exists
+		Column1: ToPgUUID(page.Cursor),
+		Limit:   int32(page.Limit) + 1, // fetch one extra to detect whether a next page exists
 	})
 	if err != nil {
-		return repository.PagedResult{}, fmt.Errorf("userRepository.FindPaged: %w", err)
+		logger.Err(err).Msg("failed to list users")
+		return repository.PagedResult{}, repository.ErrFailedToListUsers
 	}
 
-	hasNext := len(rows) > p.Limit
+	hasNext := len(rows) > page.Limit
 	if hasNext {
-		rows = rows[:p.Limit]
+		rows = rows[:page.Limit]
 	}
 
-	result := repository.PagedResult{
+	res := repository.PagedResult{
 		Users: make([]models.User, len(rows)),
 	}
 	for i, row := range rows {
-		result.Users[i] = toDomain(row)
+		res.Users[i] = toDomain(row)
 	}
 	if hasNext {
-		last := result.Users[len(result.Users)-1].ID
-		result.NextCursor = &last
+		last := res.Users[len(res.Users)-1].ID
+		res.NextCursor = &last
 	}
 
-	return result, nil
+	logger.Debug().Int("total", len(res.Users)).Msg("users found")
+	return res, nil
 }
 
 // Create adds a new user to repository
 func (r *userRepository) Create(ctx context.Context, newUser models.NewUser) (models.User, error) {
-	// retrieve queries
-	q := getQueries(ctx, r.pool)
-
 	logger := log.Ctx(ctx).With().Any("newUser", newUser).Logger()
 
 	logger.Debug().Msg("creating a new user to repo...")
+
+	// retrieve queries
+	q := getQueries(ctx, r.pool)
 
 	row, err := q.CreateUser(ctx, &sqlcgen.CreateUserParams{
 		Email:    newUser.Email,
@@ -130,14 +146,53 @@ func (r *userRepository) Create(ctx context.Context, newUser models.NewUser) (mo
 	return res, nil
 }
 
+// BulkCreates bulk insert a list of users in the repository
+func (*userRepository) BulkCreates(ctx context.Context, users []models.NewUser) (int64, error) {
+	logger := log.Ctx(ctx).With().Int("total", len(users)).Logger()
+
+	logger.Debug().Msg("bulk insert user in repo...")
+
+	if len(users) == 0 {
+		return 0, nil
+	}
+
+	// retrieve transaction
+	tx, ok := transaction.GetTx(ctx)
+	if !ok {
+		return 0, ErrFailedToRetrieveTx
+	}
+
+	// append rows
+	rows := make([][]any, 0, len(users))
+	for _, u := range users {
+		rows = append(rows, []any{u.Email, u.Username})
+	}
+
+	// bulk insert
+	count, err := tx.CopyFrom(
+		ctx,
+		pgx.Identifier{"users"},
+		[]string{"email", "username"},
+		pgx.CopyFromRows(rows),
+	)
+	if err != nil {
+		log.Err(err).Msg("failed to add users in repo")
+		return 0, ErrFailedToBulkInsert
+	}
+
+	logger.Debug().Int64("count", count).Msg("users added")
+
+	return count, nil
+}
+
 // Update updates the user data
 func (r *userRepository) Update(ctx context.Context, user models.User) (models.User, error) {
-	// retrieve queries
-	q := getQueries(ctx, r.pool)
-
 	logger := log.Ctx(ctx).With().Any("user", user).Logger()
 
 	logger.Debug().Msg("updating user repo data...")
+
+	// retrieve queries
+	q := getQueries(ctx, r.pool)
 
 	row, err := q.UpdateUser(ctx, &sqlcgen.UpdateUserParams{
 		ID:       ToPgUUID(user.ID),
@@ -164,12 +219,12 @@ func (r *userRepository) Update(ctx context.Context, user models.User) (models.U
 
 // Delete deletes a user
 func (r *userRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	// retrieve queries
-	q := getQueries(ctx, r.pool)
-
 	logger := log.Ctx(ctx).With().Str("user_id", id.String()).Logger()
 
 	logger.Debug().Msg("deleting user from repo...")
+
+	// retrieve queries
+	q := getQueries(ctx, r.pool)
 
 	if err := q.DeleteUser(ctx, ToPgUUID(id)); err != nil {
 		logger.Err(err).Msg("failed to delete user")

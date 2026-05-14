@@ -5,12 +5,14 @@ import (
 	"goddd/internal/domain/repository"
 	"goddd/internal/infrastructure/persistence/postgres"
 	"goddd/internal/infrastructure/persistence/postgres/sqlcgen"
+	"goddd/internal/infrastructure/persistence/testutil"
 	"testing"
 	"time"
 
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -26,7 +28,7 @@ func TestUserRepository_FindByID_NotFound(t *testing.T) {
 
 func TestUserRepository_FindByID(t *testing.T) {
 	ctx := log.Logger.WithContext(t.Context())
-	ctx, tx, rollback := withTx(t, ctx, testDB)
+	ctx, tx, rollback := testutil.WithTx(t, ctx, testDB)
 
 	defer rollback()
 
@@ -49,9 +51,48 @@ func TestUserRepository_FindByID(t *testing.T) {
 	assert.Equal(t, user.Username, res.Username)
 }
 
+func TestUserRepository_FindPaged(t *testing.T) {
+	ctx := log.Logger.WithContext(t.Context())
+	ctx, _, rollback := testutil.WithTx(t, ctx, testDB)
+
+	defer rollback()
+
+	repo := postgres.NewUserRepository(testDB)
+	users := []models.NewUser{
+		{Email: gofakeit.Email(), Username: gofakeit.Username()},
+		{Email: gofakeit.Email(), Username: gofakeit.Username()},
+		{Email: gofakeit.Email(), Username: gofakeit.Username()},
+	}
+
+	// add users
+	_, err := repo.BulkCreates(ctx, users)
+	require.NoError(t, err)
+
+	// list a single item
+	page := repository.Page{Limit: 1}
+	res, err := repo.FindPaged(ctx, page)
+	require.NoError(t, err)
+
+	// assertion
+	require.Equal(t, 1, len(res.Users))
+	require.NotNil(t, res.NextCursor)
+	cursor1 := res.Users[0].ID
+	assert.Equal(t, cursor1, *res.NextCursor)
+
+	// list the rest
+	page = repository.Page{Limit: 99, Cursor: res.Users[0].ID}
+	res, err = repo.FindPaged(ctx, page)
+	require.NoError(t, err)
+
+	// assertion
+	assert.Equal(t, 2, len(res.Users))
+	assert.Nil(t, res.NextCursor)
+	assert.NotContains(t, lo.Map(res.Users, func(u models.User, _ int) uuid.UUID { return u.ID }), cursor1)
+}
+
 func TestUserRepository_Create(t *testing.T) {
 	ctx := log.Logger.WithContext(t.Context())
-	ctx, _, rollback := withTx(t, ctx, testDB)
+	ctx, _, rollback := testutil.WithTx(t, ctx, testDB)
 
 	defer rollback()
 
@@ -97,7 +138,7 @@ func TestUserRepository_Update_Unknown_User(t *testing.T) {
 
 func TestUserRepository_Update(t *testing.T) {
 	ctx := log.Logger.WithContext(t.Context())
-	ctx, tx, rollback := withTx(t, ctx, testDB)
+	ctx, tx, rollback := testutil.WithTx(t, ctx, testDB)
 
 	defer rollback()
 
@@ -130,7 +171,7 @@ func TestUserRepository_Update(t *testing.T) {
 
 func TestUserRepository_Update_Email_Already_Exists(t *testing.T) {
 	ctx := log.Logger.WithContext(t.Context())
-	ctx, tx, rollback := withTx(t, ctx, testDB)
+	ctx, tx, rollback := testutil.WithTx(t, ctx, testDB)
 
 	defer rollback()
 
@@ -173,7 +214,7 @@ func TestUserRepository_Delete_Unknown_User(t *testing.T) {
 
 func TestUserRepository_Delete(t *testing.T) {
 	ctx := log.Logger.WithContext(t.Context())
-	ctx, tx, rollback := withTx(t, ctx, testDB)
+	ctx, tx, rollback := testutil.WithTx(t, ctx, testDB)
 
 	defer rollback()
 
@@ -196,4 +237,37 @@ func TestUserRepository_Delete(t *testing.T) {
 	// assert user is not found
 	_, err = repo.FindByID(ctx, user.ID.Bytes)
 	assert.ErrorIs(t, err, repository.ErrUserNotFound)
+}
+
+func TestUserRepository_BulkCreates(t *testing.T) {
+	ctx := log.Logger.WithContext(t.Context())
+
+	// tx isolation
+	ctx, tx, rollback := testutil.WithTx(t, ctx, testDB)
+	defer rollback()
+
+	q := sqlcgen.New(tx)
+
+	// assert empty before added
+	total, err := q.CountUsers(ctx)
+	require.NoError(t, err)
+	require.Equal(t, int64(0), total)
+
+	repo := postgres.NewUserRepository(testDB)
+
+	users := []models.NewUser{
+		{Email: gofakeit.Email(), Username: gofakeit.Username()},
+		{Email: gofakeit.Email(), Username: gofakeit.Username()},
+		{Email: gofakeit.Email(), Username: gofakeit.Username()},
+	}
+
+	// add users
+	count, err := repo.BulkCreates(ctx, users)
+	require.NoError(t, err)
+	require.Equal(t, int64(3), count)
+
+	// assert users has been added
+	total, err = q.CountUsers(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, int64(3), total)
 }
