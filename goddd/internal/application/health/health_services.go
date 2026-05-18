@@ -5,18 +5,22 @@ import (
 	"goddd/internal/domain/repository"
 )
 
-// HealthService for asset's services implementation
-type HealthService struct {
+type HealthService interface {
+	IsHealthy(context.Context) error
+}
+
+// service for asset's services implementation
+type service struct {
 	repo repository.HealthRepository
 }
 
 // Create the HealthService
-func NewHealthService(repo repository.HealthRepository) *HealthService {
-	return &HealthService{repo}
+func NewHealthService(repo repository.HealthRepository) HealthService {
+	return &service{repo}
 }
 
 // IsHealthy health check
-func (hs *HealthService) IsHealthy(ctx context.Context) error {
+func (hs *service) IsHealthy(ctx context.Context) error {
 	// ping repo
 	if err := hs.repo.Ping(ctx); err != nil {
 		return err

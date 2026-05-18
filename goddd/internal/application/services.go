@@ -9,8 +9,8 @@ import (
 
 // Services holds the service object
 type Services struct {
-	*healthservice.HealthService
-	*userservice.UserService
+	healthservice.HealthService
+	userservice.UserService
 }
 
 // NewServices instantiate services

@@ -12,10 +12,9 @@ packages:
       filename: '{{.InterfaceName | snakecase | lower }}.go'
       pkgname: repository_mocks
       all: true
-  # goddd/application:
-  #   config:
-  #     dir: tests/mocks/uow
-  #     filename: 'unit_of_work.go'
-  #     pkgname: uow_mocks
-  #   interfaces:
-  #     UnitOfWork:
+  goddd/internal/application/transaction:
+    config:
+      dir: tests/mocks/transaction
+      filename: 'transaction.go'
+      pkgname: transaction_mocks
+      all: true
