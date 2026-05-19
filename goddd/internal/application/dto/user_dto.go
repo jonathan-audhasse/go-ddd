@@ -17,3 +17,10 @@ func (dto CreateUserRequest) ToNewUser() models.NewUser {
 		Email:    dto.Email,
 	}
 }
+
+// ListUsersResponse is the paginated envelope returned by GET /users.
+type ListUsersResponse struct {
+	Data       []models.User `json:"data"`
+	Limit      int           `json:"limit"`
+	NextCursor *string       `json:"next_cursor"` // null on last page
+}

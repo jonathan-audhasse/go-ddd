@@ -2,6 +2,7 @@ package userservice
 
 import (
 	"context"
+	"goddd/internal/application/apperror"
 	"goddd/internal/application/dto"
 	"goddd/internal/application/transaction"
 	"goddd/internal/domain/models"
@@ -44,7 +45,8 @@ func (s *service) CreateNewUser(ctx context.Context, req dto.CreateUserRequest) 
 		return nil
 	})
 	if err != nil {
-		return models.User{}, err
+		return models.User{}, apperror.ToAppError(err)
+
 	}
 
 	logger.Info().Msg("new user created")
@@ -61,7 +63,7 @@ func (s *service) GetUser(ctx context.Context, userId uuid.UUID) (*models.User, 
 	// retrieve from repo
 	user, err := s.repo.FindByID(ctx, userId)
 	if err != nil {
-		return nil, err
+		return nil, apperror.ToAppError(err)
 	}
 
 	logger.Info().Msg("user found")

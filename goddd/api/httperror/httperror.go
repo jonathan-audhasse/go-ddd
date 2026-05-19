@@ -1,54 +1,65 @@
 package httperror
 
 import (
-	"goddd/pkg/errors"
+	"encoding/json"
+	"errors"
+	"goddd/internal/application/apperror"
 	"net/http"
-
-	"github.com/gin-gonic/gin"
 )
 
-type httpError struct {
-	ErrorID errors.ErrorID `json:"errorId"`
-	Msg     string         `json:"message"`
+type Response struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
 }
 
-func NewError(err error) httpError {
-	httpErr, ok := err.(httpError)
-	if !ok {
-		httpErr = httpError{ErrorID: errors.GetID(err), Msg: errors.FullError(err)}
+// Write error to http writer
+func Write(w http.ResponseWriter, err error) {
+	status := StatusCode(err)
+
+	resp := Response{
+		Code:    codeFromError(err),
+		Message: err.Error(),
 	}
-	return httpErr
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+
+	_ = json.NewEncoder(w).Encode(resp)
 }
 
-func (err httpError) Error() string {
-	return err.Msg
-}
-
-// simple error handler
-func HandleErr(c *gin.Context, err error) {
-	httpErr := NewError(err)
-	c.JSON(httpStatusCode(httpErr.ErrorID), httpErr)
-}
-
-// for abortion
-func Abort(c *gin.Context, err error) {
-	httpErr := NewError(err)
-	_ = c.Error(httpErr)
-	c.AbortWithStatusJSON(httpStatusCode(httpErr.ErrorID), httpErr)
-}
-
-// map internal error code to Http status code
-func httpStatusCode(errID errors.ErrorID) int {
-	switch errID {
-	case errors.UnAuthorized:
-		return http.StatusUnauthorized
-	case errors.InvalidField:
-		return http.StatusBadRequest
-	case errors.InvalidFormat, errors.RepoItemAlreadyExist:
-		return http.StatusUnprocessableEntity
-	case errors.RepoItemNotFound:
+// StatusCode map application error to http status code
+func StatusCode(err error) int {
+	switch {
+	case errors.Is(err, apperror.ErrNotFound):
 		return http.StatusNotFound
+
+	case errors.Is(err, apperror.ErrUnprocessable):
+		return http.StatusUnprocessableEntity
+
+	case errors.Is(err, apperror.ErrUnavailable):
+		return http.StatusServiceUnavailable
+
+	case errors.Is(err, apperror.ErrInternal):
+		return http.StatusInternalServerError
+
 	default:
 		return http.StatusInternalServerError
+	}
+}
+
+// codeFromError returns a error code from error
+func codeFromError(err error) string {
+	switch {
+	case errors.Is(err, apperror.ErrNotFound):
+		return "NOT_FOUND"
+
+	case errors.Is(err, apperror.ErrUnprocessable):
+		return "UNPROCESSABLE"
+
+	case errors.Is(err, apperror.ErrUnavailable):
+		return "SERVICE_UNAVAILABLE"
+
+	default:
+		return "INTERNAL_ERROR"
 	}
 }

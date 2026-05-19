@@ -2,6 +2,7 @@ package healthservice
 
 import (
 	"context"
+	"goddd/internal/application/apperror"
 	"goddd/internal/domain/repository"
 )
 
@@ -21,9 +22,10 @@ func NewHealthService(repo repository.HealthRepository) HealthService {
 
 // IsHealthy health check
 func (hs *service) IsHealthy(ctx context.Context) error {
+
 	// ping repo
 	if err := hs.repo.Ping(ctx); err != nil {
-		return err
+		return apperror.ToAppError(err)
 	}
 	// healthy
 	return nil

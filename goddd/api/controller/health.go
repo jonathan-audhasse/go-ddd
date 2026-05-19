@@ -1,21 +1,25 @@
 package controller
 
 import (
-	"goddd/api/httperror"
-	"goddd/domain/services"
+	"encoding/json"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
+	"goddd/api/httperror"
+	healthservice "goddd/internal/application/health"
 )
 
-func Health(serv *services.HealthService) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		if err := serv.IsHealthy(); err != nil {
+func Health(srv healthservice.HealthService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := srv.IsHealthy(r.Context()); err != nil {
 			// not healthy
-			httperror.HandleErr(c, err)
+			httperror.Write(w, err)
 			return
 		}
+
 		// healthy
-		c.JSON(http.StatusOK, map[string]string{})
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+
+		_ = json.NewEncoder(w).Encode(map[string]string{})
 	}
 }

@@ -11,6 +11,7 @@ Below is a curated list of the best options depending on your needs.
 ---
 
 ## 1. pgx + pgxpool (PostgreSQL)
+
 **Best for:** High performance, fine-grained control, production systems needing efficiency.
 
 - Driver and toolkit for PostgreSQL.
@@ -19,11 +20,13 @@ Below is a curated list of the best options depending on your needs.
 - Great choice if you want control without a full ORM.
 
 **Links:**
+
 - https://github.com/jackc/pgx
 
 ---
 
 ## 2. GORM
+
 **Best for:** Quick development, ORM-style queries, developer productivity.
 
 - Most popular ORM in Go.
@@ -32,11 +35,13 @@ Below is a curated list of the best options depending on your needs.
 - Supports migrations, associations, soft deletes, hooks.
 
 **Links:**
+
 - https://gorm.io/
 
 ---
 
 ## 3. SQLC
+
 **Best for:** Type-safe SQL with zero runtime overhead.
 
 - You write SQL; SQLC generates Go code and types.
@@ -44,11 +49,13 @@ Below is a curated list of the best options depending on your needs.
 - Perfect balance between raw SQL control and strong typing.
 
 **Links:**
+
 - https://sqlc.dev/
 
 ---
 
 ## 4. Ent (by Facebook/Meta)
+
 **Best for:** Schema-driven design, large apps, strongly typed APIs.
 
 - You define your schema in Go.
@@ -56,31 +63,37 @@ Below is a curated list of the best options depending on your needs.
 - Very strong design and tooling (GraphQL integration, codegen, etc.).
 
 **Links:**
+
 - https://entgo.io/
 
 ---
 
 ## 5. sqlx
+
 **Best for:** “Better database/sql” with minimal abstraction.
 
 - Adds powerful helpers (named queries, struct scanning).
 - Keeps control of raw SQL, no ORM layer.
 
 **Links:**
+
 - https://github.com/jmoiron/sqlx
 
 ---
 
 ## 6. Database “middleware” for logging and tracing
+
 These libraries wrap the database layer to add observability:
 
 ### sqlhooks
+
 - Lets you hook into queries for logging, metrics, tracing.
 - Works with `database/sql`.
 
 https://github.com/qustavo/sqlhooks
 
 ### OpenTelemetry instrumentation
+
 - Provides automatic spans for database operations.
 - Works with pgx, database/sql, GORM, Ent.
 
@@ -88,18 +101,20 @@ https://opentelemetry.io/
 
 ---
 
-# Recommendation
+## Recommendation
 
 🔥 Recommended stack for production (2025)
 Best general-purpose combo:
 
 **pgx + sqlc + migrate**
 This is what many modern Go SaaS companies use (incl. startups and scale-ups):
+
 - `pgx`: driver
 - `sqlc`: generates type-safe DB code
 - `migrate`: schema migrations
 
 Gives:
+
 - Maximum performance
 - Maximum type safety
 - No ORM magic
@@ -125,6 +140,7 @@ If you are building a REST/gRPC backend (which seems to be your profile):
 👉 Use PostgreSQL with `pgx` + `sqlc` + `migrate`
 
 You’ll get:
+
 - performance
 - type safety
 - predictability
@@ -133,7 +149,7 @@ You’ll get:
 If you prefer ORMs:
 👉 Use ent (better design) rather than gorm.
 
-# Recommendation Summary
+## Recommendation Summary
 
 | Use Case | Recommended Solution |
 |---------|-----------------------|
@@ -149,11 +165,9 @@ If you prefer ORMs:
 If you want, I can also generate a downloadable `.md` file for you.
 
 
+---
 
-
------------
-
-# What are the best REST API middleware for golang
+## What are the best REST API middleware for golang
 
 Here are some of the best and most commonly used REST API middleware libraries for Go, useful with routers like net/http, chi, Gin, Echo, etc.:
 
