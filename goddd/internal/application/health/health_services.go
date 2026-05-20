@@ -6,6 +6,7 @@ import (
 	"goddd/internal/domain/repository"
 )
 
+// HealthService Interface
 type HealthService interface {
 	IsHealthy(context.Context) error
 }

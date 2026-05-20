@@ -6,8 +6,10 @@ Domain Driven Design pattern in go
 
 goddd/
 ├── cmd/
-│   └── api/
-│       └── main.go                     # wires everything together
+│   ├── api/
+│   │   └── main.go                     # wires everything together
+│   └── migrate/
+│       └── main.go                     # for DB migration
 │
 ├── internal/
 │   ├── api/                            # presentation layer

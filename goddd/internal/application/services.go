@@ -12,7 +12,7 @@ type Services struct {
 	User   user.UserService
 }
 
-func NewServices(repo *repository.Repository, tm transaction.TransactionManager) *Services {
+func NewServices(repo *repository.Repositories, tm transaction.TransactionManager) *Services {
 	return &Services{
 		Health: health.NewHealthService(repo.HealthRepo),
 		User:   user.NewUserService(repo.UserRepo, tm),

@@ -2,7 +2,7 @@ package postgres_test
 
 import (
 	"context"
-	"goddd/internal/infrastructure/persistence/testutil"
+	"goddd/internal/infrastructure/persistence/testutils"
 	"os"
 	"testing"
 
@@ -13,11 +13,11 @@ import (
 var testDB *pgxpool.Pool
 
 func TestMain(m *testing.M) {
-	testutil.InitTestLogger()
+	testutils.InitTestLogger()
 
 	ctx := context.Background()
 
-	pgCon, err := testutil.NewPGContainer(ctx)
+	pgCon, err := testutils.NewPGContainer(ctx)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed create new pg container")
 	}

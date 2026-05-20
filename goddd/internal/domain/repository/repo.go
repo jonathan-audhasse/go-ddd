@@ -1,6 +1,6 @@
 package repository
 
-type Repository struct {
+type Repositories struct {
 	HealthRepo HealthRepository
 	UserRepo   UserRepository
 }

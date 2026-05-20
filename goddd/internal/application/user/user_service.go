@@ -46,7 +46,6 @@ func (s *service) CreateNewUser(ctx context.Context, req dto.CreateUserRequest) 
 	})
 	if err != nil {
 		return models.User{}, apperror.ToAppError(err)
-
 	}
 
 	logger.Info().Msg("new user created")

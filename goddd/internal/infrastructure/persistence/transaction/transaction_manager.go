@@ -56,9 +56,13 @@ func (m *transactionManager) Do(ctx context.Context, fn func(ctx context.Context
 	ctxWithTx := WithTx(ctx, tx)
 
 	if err := fn(ctxWithTx); err != nil {
+		return err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
 		logger.Err(err).Msg("failed to commit transaction")
 		return ErrFailedToCommit
 	}
 
-	return tx.Commit(ctx)
+	return nil
 }

@@ -38,12 +38,18 @@ up: ## Mount services
 down: ## Stop and Remove all mounted services
 	docker compose down --remove-orphans
 
+up-dev: ## Mount services for dev purpose
+	docker compose --profile dev up
+
+down-dev: ## Stop and remove all mounted services (for dev)
+	docker compose --profile dev down --remove-orphans
+
 #---------#
 #  Tests  #
 #---------#
 
 test: up ## Run tests
-	$(call info, "TODO set tests")
+	$(call info, "launching unit test")
 	docker compose run --rm --no-deps --entrypoint=go server test ./...
 
 #-----------#

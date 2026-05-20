@@ -4,51 +4,53 @@ import (
 	"context"
 	"flag"
 
-	"goddd/internal/infrastructure/config"
-	"goddd/internal/infrastructure/logger"
+	"goddd/internal/bootstrap"
 	"goddd/internal/infrastructure/persistence/migrations"
-	"goddd/internal/infrastructure/persistence/postgres"
 )
 
+const schemaName = "goddd"
+
 func main() {
-	cmd := flag.String("cmd", "up", "Migration command: up | down | steps | version")
-	steps := flag.Int("steps", 1, "Number of steps (used with -cmd=steps)")
+
+	cmd := flag.String("cmd", "up", "up | down | steps | version")
+	steps := flag.Int("steps", 1, "steps count")
 	flag.Parse()
 
-	ctx := context.Background()
-
-	cfg, err := config.Load()
+	app, err := bootstrap.New(context.Background())
 	if err != nil {
 		panic(err)
 	}
 
-	log := logger.New(cfg.LogLevel)
-
-	pool, err := postgres.Open(ctx, cfg.DatabaseURL())
-	if err != nil {
-		log.Fatal().Err(err).Msg("failed to open database")
-	}
-	defer pool.Close()
-
 	switch *cmd {
+
 	case "up":
-		err = migrations.Up(pool, cfg.MigrationsPath)
+		err = migrations.Up(app.DB, schemaName)
+
 	case "down":
-		err = migrations.Down(pool, cfg.MigrationsPath)
+		err = migrations.Down(app.DB, schemaName)
+
 	case "steps":
-		err = migrations.Steps(pool, cfg.MigrationsPath, *steps)
+		err = migrations.Steps(app.DB, schemaName, *steps)
+
 	case "version":
-		v, dirty, verr := migrations.Version(pool, cfg.MigrationsPath)
-		if verr != nil {
-			log.Fatal().Err(verr).Msg("could not read version")
+		v, dirty, err := migrations.Version(app.DB, schemaName)
+
+		if err != nil {
+			app.Logger.Fatal().Err(err).Msg("failed to get migration version")
 		}
-		log.Info().Uint("version", v).Bool("dirty", dirty).Msg("current migration version")
+
+		app.Logger.Info().
+			Uint("version", v).
+			Bool("dirty", dirty).
+			Msg("migration version")
+
 		return
-	default:
-		log.Fatal().Str("cmd", *cmd).Msg("unknown command — use up, down, steps, or version")
 	}
 
 	if err != nil {
-		log.Fatal().Err(err).Str("cmd", *cmd).Msg("migration failed")
+		app.Logger.Fatal().
+			Err(err).
+			Str("cmd", *cmd).
+			Msg("migration failed")
 	}
 }

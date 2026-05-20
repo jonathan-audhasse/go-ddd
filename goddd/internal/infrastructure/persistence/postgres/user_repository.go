@@ -126,7 +126,7 @@ func (r *userRepository) Create(ctx context.Context, newUser models.NewUser) (mo
 		Username: newUser.Username,
 	})
 	if err != nil {
-		log.Err(err).Msg("failed to add user to repo")
+		logger.Err(err).Msg("failed to add user to repo")
 
 		var pqErr *pgconn.PgError
 		if errors.As(err, &pqErr) {
@@ -176,7 +176,7 @@ func (*userRepository) BulkCreates(ctx context.Context, users []models.NewUser) 
 		pgx.CopyFromRows(rows),
 	)
 	if err != nil {
-		log.Err(err).Msg("failed to add users in repo")
+		logger.Err(err).Msg("failed to add users in repo")
 		return 0, ErrFailedToBulkInsert
 	}
 
@@ -200,7 +200,7 @@ func (r *userRepository) Update(ctx context.Context, user models.User) (models.U
 		Username: user.Username,
 	})
 	if err != nil {
-		log.Err(err).Msg("failed to update user repo")
+		logger.Err(err).Msg("failed to update user repo")
 
 		var pqErr *pgconn.PgError
 		if errors.As(err, &pqErr) {

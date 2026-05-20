@@ -5,7 +5,7 @@ import (
 	"goddd/internal/domain/repository"
 	"goddd/internal/infrastructure/persistence/postgres"
 	"goddd/internal/infrastructure/persistence/postgres/sqlcgen"
-	"goddd/internal/infrastructure/persistence/testutil"
+	"goddd/internal/infrastructure/persistence/testutils"
 	"testing"
 	"time"
 
@@ -28,7 +28,7 @@ func TestUserRepository_FindByID_NotFound(t *testing.T) {
 
 func TestUserRepository_FindByID(t *testing.T) {
 	ctx := log.Logger.WithContext(t.Context())
-	ctx, tx, rollback := testutil.WithTx(t, ctx, testDB)
+	ctx, tx, rollback := testutils.WithTx(t, ctx, testDB)
 
 	defer rollback()
 
@@ -53,7 +53,7 @@ func TestUserRepository_FindByID(t *testing.T) {
 
 func TestUserRepository_FindPaged(t *testing.T) {
 	ctx := log.Logger.WithContext(t.Context())
-	ctx, _, rollback := testutil.WithTx(t, ctx, testDB)
+	ctx, _, rollback := testutils.WithTx(t, ctx, testDB)
 
 	defer rollback()
 
@@ -92,7 +92,7 @@ func TestUserRepository_FindPaged(t *testing.T) {
 
 func TestUserRepository_Create(t *testing.T) {
 	ctx := log.Logger.WithContext(t.Context())
-	ctx, _, rollback := testutil.WithTx(t, ctx, testDB)
+	ctx, _, rollback := testutils.WithTx(t, ctx, testDB)
 
 	defer rollback()
 
@@ -138,7 +138,7 @@ func TestUserRepository_Update_Unknown_User(t *testing.T) {
 
 func TestUserRepository_Update(t *testing.T) {
 	ctx := log.Logger.WithContext(t.Context())
-	ctx, tx, rollback := testutil.WithTx(t, ctx, testDB)
+	ctx, tx, rollback := testutils.WithTx(t, ctx, testDB)
 
 	defer rollback()
 
@@ -171,7 +171,7 @@ func TestUserRepository_Update(t *testing.T) {
 
 func TestUserRepository_Update_Email_Already_Exists(t *testing.T) {
 	ctx := log.Logger.WithContext(t.Context())
-	ctx, tx, rollback := testutil.WithTx(t, ctx, testDB)
+	ctx, tx, rollback := testutils.WithTx(t, ctx, testDB)
 
 	defer rollback()
 
@@ -214,7 +214,7 @@ func TestUserRepository_Delete_Unknown_User(t *testing.T) {
 
 func TestUserRepository_Delete(t *testing.T) {
 	ctx := log.Logger.WithContext(t.Context())
-	ctx, tx, rollback := testutil.WithTx(t, ctx, testDB)
+	ctx, tx, rollback := testutils.WithTx(t, ctx, testDB)
 
 	defer rollback()
 
@@ -243,7 +243,7 @@ func TestUserRepository_BulkCreates(t *testing.T) {
 	ctx := log.Logger.WithContext(t.Context())
 
 	// tx isolation
-	ctx, tx, rollback := testutil.WithTx(t, ctx, testDB)
+	ctx, tx, rollback := testutils.WithTx(t, ctx, testDB)
 	defer rollback()
 
 	q := sqlcgen.New(tx)
