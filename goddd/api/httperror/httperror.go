@@ -14,7 +14,7 @@ type Response struct {
 
 // Write error to http writer
 func Write(w http.ResponseWriter, err error) {
-	status := StatusCode(err)
+	status := statusCode(err)
 
 	resp := Response{
 		Code:    codeFromError(err),
@@ -28,8 +28,11 @@ func Write(w http.ResponseWriter, err error) {
 }
 
 // StatusCode map application error to http status code
-func StatusCode(err error) int {
+func statusCode(err error) int {
 	switch {
+	case errors.Is(err, apperror.ErrInvalid):
+		return http.StatusBadRequest
+
 	case errors.Is(err, apperror.ErrNotFound):
 		return http.StatusNotFound
 
@@ -39,9 +42,6 @@ func StatusCode(err error) int {
 	case errors.Is(err, apperror.ErrUnavailable):
 		return http.StatusServiceUnavailable
 
-	case errors.Is(err, apperror.ErrInternal):
-		return http.StatusInternalServerError
-
 	default:
 		return http.StatusInternalServerError
 	}
@@ -50,11 +50,14 @@ func StatusCode(err error) int {
 // codeFromError returns a error code from error
 func codeFromError(err error) string {
 	switch {
+	case errors.Is(err, apperror.ErrInvalid):
+		return "INVALID_INPUT"
+
 	case errors.Is(err, apperror.ErrNotFound):
 		return "NOT_FOUND"
 
 	case errors.Is(err, apperror.ErrUnprocessable):
-		return "UNPROCESSABLE"
+		return "UNPROCESSABLE_ENTITY"
 
 	case errors.Is(err, apperror.ErrUnavailable):
 		return "SERVICE_UNAVAILABLE"

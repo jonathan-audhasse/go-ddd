@@ -1,9 +1,9 @@
-package userservice_test
+package user_test
 
 import (
 	"context"
 	"goddd/internal/application/dto"
-	userservice "goddd/internal/application/user"
+	user "goddd/internal/application/user"
 	"goddd/internal/domain/models"
 	mockrepo "goddd/tests/mocks/repository"
 	mocktm "goddd/tests/mocks/transaction"
@@ -60,7 +60,7 @@ func TestUserService_CreateNewUser(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			repo := mockrepo.NewMockUserRepository(t)
 			repo.EXPECT().Create(ctx, mock.AnythingOfType("models.NewUser")).RunAndReturn(tc.create)
-			srv := userservice.NewUserService(repo, tm)
+			srv := user.NewUserService(repo, tm)
 
 			res, err := srv.CreateNewUser(ctx, req)
 			require.Equal(t, tc.expErr, err)
@@ -100,7 +100,7 @@ func TestUserService_GetUser(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			repo := mockrepo.NewMockUserRepository(t)
 			repo.EXPECT().FindByID(mock.Anything, id).Return(&expUser, tc.expErr)
-			srv := userservice.NewUserService(repo, nil)
+			srv := user.NewUserService(repo, nil)
 
 			res, err := srv.GetUser(ctx, id)
 			require.Equal(t, tc.expErr, err)

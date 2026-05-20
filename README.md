@@ -7,21 +7,31 @@ Domain Driven Design pattern in go
 goddd/
 ├── cmd/
 │   └── api/
-│       └── main.go              # wires everything together
+│       └── main.go                     # wires everything together
 │
 ├── internal/
+│   ├── api/                            # presentation layer
+│   │   ├── controller/                 # controllers
+│   │   │   ├── health_controller.go
+│   │   │   └── user_controller.go
+│   │   ├── httperror/                 # controllers
+│   │   │   └── httperror.go
+│   │   └── middleware/
+│   │       └── authentication.go
+│   │
+│   ├── application/                    # use cases, orchestrates domain
+│   │   ├── dto/                        # DTO (Data Transfer Object)
+│   │   ├── health/                     # for health check
+│   │   ├── transaction/                # the unit of work pattern
+│   │   ├── user/                       # user application
+│   │   └── service.go                  # the service interfaces
+│   │
 │   ├── domain/                  # pure business logic, no dependencies
 │   │   ├── models/              # entities
 │   │   │   ├── user.go
 │   │   │   └── post.go
 │   │   └── repository/
 │   │       └── repository.go
-│   │
-│   ├── application/                    # use cases, orchestrates domain
-│   │   ├── dto/                        # DTO (Data Transfer Object)
-│   │   ├── health/                     # for health check
-│   │   ├── transaction/                # the unit of work pattern
-│   │   └── user/                       # user application
 │   │
 │   └── infrastructure/                 # ← migrations and config
 │       ├── config/

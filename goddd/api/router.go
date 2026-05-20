@@ -2,39 +2,32 @@ package api
 
 import (
 	"goddd/api/controller"
-	"goddd/api/middleware"
-	"goddd/domain/services"
+	"goddd/internal/application"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
+	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
 )
 
-func NewRouter(services *services.Services) *gin.Engine {
-	r := gin.Default()
+func NewRouter(services *application.Services) http.Handler {
+	r := chi.NewRouter()
 
-	// middlewares
-	r.Use(middleware.Cors()) //For CORS
-	r.NoRoute(func(c *gin.Context) {
-		c.JSON(http.StatusNotFound, gin.H{
-			"code":    "PAGE_NOT_FOUND",
-			"message": "Page not found",
-		})
-	})
+	// middleware
+	r.Use(middleware.RequestID)
+	r.Use(middleware.RealIP)
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
 
-	// healthcheck
-	r.GET("/health", controller.Health(services.HealthService))
-
-	// Basic Authorisation
-	auth := middleware.BasicAuth(services.UserService)
-
-	// controllers
-	custCtl := controller.NewCustomerClt(services.CustomerService)
+	healthController := controller.NewHealthController(services.Health)
+	userController := controller.NewUserController(services.User)
 
 	// routes
-	r.GET("/customers", auth, custCtl.ListCustomers)
-	r.GET("/customers/:id", auth, custCtl.GetCustomer)
-	r.DELETE("/customers/:id", auth, custCtl.DeleteCustomer)
-	r.POST("/customers", auth, custCtl.AddCustomer)
+	r.Get("/health", healthController.Health)
+
+	r.Route("/users", func(r chi.Router) {
+		r.Post("/", userController.CreateUser)
+		r.Get("/{id}", userController.GetUser)
+	})
 
 	return r
 }

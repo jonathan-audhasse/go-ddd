@@ -7,11 +7,11 @@ import (
 )
 
 var (
-	ErrNotFound      = errors.New("not found")
-	ErrUnprocessable = errors.New("unprocessable item")
-	ErrUnavailable   = errors.New("unavailable item")
 	ErrInvalid       = errors.New("invalid input")
 	ErrInternal      = errors.New("internal error")
+	ErrNotFound      = errors.New("not found")
+	ErrUnavailable   = errors.New("unavailable item")
+	ErrUnprocessable = errors.New("unprocessable item")
 )
 
 // ToAppError map error to application error

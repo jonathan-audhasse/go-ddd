@@ -1,283 +1,195 @@
-package controller
+package controller_test
 
 import (
-	"bytes"
+	"context"
 	"encoding/json"
-	"fmt"
-	"io"
-	"log"
+	"goddd/api/controller"
+	"goddd/internal/application/dto"
+	"goddd/internal/domain/models"
+	service_mocks "goddd/tests/mocks/service"
 	"net/http"
 	"net/http/httptest"
-	"os"
+	"strings"
 	"testing"
 
-	"github.com/gin-gonic/gin"
-	"github.com/jmoiron/sqlx"
+	"github.com/brianvoe/gofakeit/v7"
+	"github.com/go-chi/chi"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
-var db *sqlx.DB
+func TestUserController_CreateUser_InvalidJSON(t *testing.T) {
+	svc := service_mocks.NewMockUserService(t)
+	ctrl := controller.NewUserController(svc)
 
-func TestMain(m *testing.M) {
-	// establish connection
-	conn, close, err := postgres.Connect()
-
-	if err != nil {
-		log.Fatalf("failed to connect to DB. err=%s", err)
-	}
-	db = conn
-	code := m.Run()
-	// Teardown code goes here
-	// close db session
-	close()
-	os.Exit(code)
-}
-
-// You can use *testing.T, if you want to test the code without benchmarking
-func setupTest(tb testing.TB, method, relativePath, url string, handler gin.HandlerFunc, body io.Reader) *httptest.ResponseRecorder {
-	log.Println("setup test")
-
-	// set up engine
-	r := gin.Default()
-	// r.GET(url, handler) == r.Handle("GET", url, handler)
-	r.Handle(method, relativePath, handler)
-
-	// set up the request recorder
-	// http.POST(url, body) == htt.NewRequest("POST", url, body)
-	req, err := http.NewRequest(method, url, body)
-	if err != nil {
-		tb.Fatal(err)
-	}
+	req := httptest.NewRequest(http.MethodPost, "/users", strings.NewReader("{invalid-json"))
 	rec := httptest.NewRecorder()
-	r.ServeHTTP(rec, req)
 
-	// return the response recorder
-	return rec
+	ctrl.CreateUser(rec, req)
+
+	require.Equal(t, http.StatusBadRequest, rec.Code) // current behavior
+	svc.AssertNotCalled(t, "CreateNewUser", mock.Anything, mock.Anything)
+
+	var res map[string]string
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &res))
+
+	assert.Equal(t, "INVALID_INPUT", res["code"])
+	assert.Equal(t, "invalid input", res["message"])
 }
 
-func clearUsers(tb testing.TB) {
-	if _, err := db.Exec("DELETE FROM \"user\""); err != nil {
-		tb.Fatal(err)
-	}
-	fmt.Println("teardown test")
+func TestUserController_CreateUser_ServiceError(t *testing.T) {
+	ctx := context.Background()
+	svc := service_mocks.NewMockUserService(t)
+	ctrl := controller.NewUserController(svc)
+
+	reqBody := `{"username":"john","email":"john@test.com"}`
+	req := httptest.NewRequest(http.MethodPost, "/users", strings.NewReader(reqBody))
+	rec := httptest.NewRecorder()
+
+	mockErr := gofakeit.Error()
+	svc.EXPECT().CreateNewUser(ctx, mock.Anything).Return(models.User{}, mockErr)
+
+	ctrl.CreateUser(rec, req)
+
+	assert.Equal(t, http.StatusInternalServerError, rec.Code)
+	svc.AssertExpectations(t)
+
+	var res map[string]string
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &res))
+
+	assert.Equal(t, "INTERNAL_ERROR", res["code"])
+	assert.Equal(t, mockErr.Error(), res["message"])
 }
 
-func addUsers(t *testing.T, users ...models.User) func(testing.TB) {
-	// add users
-	tx := db.MustBegin()
-	_, err := tx.NamedExec("INSERT INTO \"user\" (id, username, password) VALUES (:id, :username, :password)", users)
-	require.NoError(t, err)
-	if err := tx.Commit(); err != nil {
-		t.Error(err)
+func TestUserController_CreateUser_Success(t *testing.T) {
+	svc := service_mocks.NewMockUserService(t)
+	ctrl := controller.NewUserController(svc)
+
+	reqBody := `{"username":"john","email":"john@test.com"}`
+	req := httptest.NewRequest(http.MethodPost, "/users", strings.NewReader(reqBody))
+	rec := httptest.NewRecorder()
+
+	expUser := models.User{
+		ID:       uuid.New(),
+		Username: "john",
+		Email:    "john@test.com",
 	}
 
-	return func(tb testing.TB) {
-		//clear repo
-		clearUsers(tb)
+	createUserReq := dto.CreateUserRequest{
+		Username: "john",
+		Email:    "john@test.com",
 	}
+
+	svc.EXPECT().CreateNewUser(mock.Anything, createUserReq).Return(expUser, nil)
+	ctrl.CreateUser(rec, req)
+
+	require.Equal(t, http.StatusCreated, rec.Code)
+	require.Equal(t, "application/json", rec.Header().Get("Content-Type"))
+
+	var res models.User
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &res))
+
+	require.Equal(t, expUser.ID, res.ID)
+	require.Equal(t, expUser.Username, res.Username)
+	require.Equal(t, expUser.Email, res.Email)
+
+	svc.AssertExpectations(t)
 }
 
-func clearCustomers(tb testing.TB) {
-	if _, err := db.Exec("DELETE FROM customer"); err != nil {
-		tb.Fatal(err)
-	}
-	fmt.Println("teardown test")
+func TestUserController_GetUser_FailedToParseId(t *testing.T) {
+	svc := service_mocks.NewMockUserService(t)
+	ctrl := controller.NewUserController(svc)
+
+	invalidId := "invalid-id-format"
+	req := httptest.NewRequest(http.MethodGet, "/users/"+invalidId, nil)
+
+	// inject chi URL param manually
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("id", invalidId)
+
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+	rec := httptest.NewRecorder()
+
+	ctrl.GetUser(rec, req)
+
+	require.Equal(t, http.StatusBadRequest, rec.Code)
+	require.Equal(t, "application/json", rec.Header().Get("Content-Type"))
+
+	var res map[string]string
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &res))
+
+	assert.Equal(t, "INVALID_INPUT", res["code"])
+	assert.Equal(t, "invalid input", res["message"])
+
+	svc.AssertExpectations(t)
 }
 
-func addCustomers(t *testing.T, customers []models.Customer) func(testing.TB) {
-	tx := db.MustBegin()
-	// add customers
-	_, err := tx.NamedExec("INSERT INTO customer (id, user_id, name, email) VALUES (:id, :user_id, :name, :email)", customers)
-	require.NoError(t, err)
-	if err := tx.Commit(); err != nil {
-		t.Error(err)
-	}
+func TestUserController_GetUser_ServiceError(t *testing.T) {
+	svc := service_mocks.NewMockUserService(t)
+	ctrl := controller.NewUserController(svc)
 
-	return func(tb testing.TB) {
-		// empty repo
-		clearCustomers(tb)
-	}
+	id := uuid.New()
+
+	req := httptest.NewRequest(http.MethodGet, "/users/"+id.String(), nil)
+
+	// inject chi URL param manually
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("id", id.String())
+
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+	rec := httptest.NewRecorder()
+
+	mockErr := gofakeit.Error()
+	svc.EXPECT().GetUser(mock.Anything, id).Return(nil, mockErr)
+	ctrl.GetUser(rec, req)
+
+	require.Equal(t, http.StatusInternalServerError, rec.Code)
+	require.Equal(t, "application/json", rec.Header().Get("Content-Type"))
+
+	var res map[string]string
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &res))
+
+	assert.Equal(t, "INTERNAL_ERROR", res["code"])
+	assert.Equal(t, mockErr.Error(), res["message"])
+
+	svc.AssertExpectations(t)
 }
 
-func TestCustomerCtl_ListCustomer(t *testing.T) {
-	// Create a fake user to add to repository
-	u := models.User{Id: "u_ID", Username: "Jonathan", Password: "jonathan_password"}
-	defer addUsers(t, u)(t)
+func TestUserController_GetUser_Success(t *testing.T) {
+	svc := service_mocks.NewMockUserService(t)
+	ctrl := controller.NewUserController(svc)
 
-	// Create repo Repo
-	repo := postgres.NewCustomerRepo(db)
-	service := services.NewCustomerService(repo)
-	testCases := []struct {
-		customers []models.Customer
-		name      string
-		expRes    []map[string]string
-	}{
-		{
-			customers: []models.Customer{},
-			name:      "list customers (empty repository)",
-			expRes:    []map[string]string{},
-		},
-		{
-			customers: []models.Customer{{Id: "an_ID", Name: "Johnny", Email: "a@b.c"}},
-			name:      "list customers with a single customer",
-			expRes:    []map[string]string{{"id": "an_ID", "name": "Johnny", "email": "a@b.c"}},
-		},
+	id := uuid.New()
+
+	expUser := models.User{
+		ID:       id,
+		Username: "john",
+		Email:    "john@test.com",
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			// populate repo
-			defer addCustomers(t, tc.customers)(t)
+	req := httptest.NewRequest(http.MethodGet, "/users/"+id.String(), nil)
 
-			rec := setupTest(t, http.MethodGet, "/customers", "/customers", (&CustomerCtl{service}).ListCustomers, nil)
+	// inject chi URL param manually
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("id", id.String())
 
-			// check status code
-			assert.Equal(t, http.StatusOK, rec.Code)
-			res := make([]map[string]string, 0)
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+	rec := httptest.NewRecorder()
 
-			if assert.NoError(t, json.NewDecoder(rec.Body).Decode(&res), "unexpected error") {
-				assert.Equal(t, tc.expRes, res)
-			}
-		})
-	}
-}
+	svc.EXPECT().GetUser(mock.Anything, id).Return(&expUser, nil)
+	ctrl.GetUser(rec, req)
 
-func TestCustomerCtl_GetCustomer(t *testing.T) {
-	// Create a fake user to add to repository
-	u := models.User{Id: "u_ID", Username: "Jonathan", Password: "jonathan_password"}
-	defer addUsers(t, u)(t)
+	require.Equal(t, http.StatusOK, rec.Code)
+	require.Equal(t, "application/json", rec.Header().Get("Content-Type"))
 
-	// Create repo Repo
-	repo := postgres.NewCustomerRepo(db)
-	service := services.NewCustomerService(repo)
+	var res models.User
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &res))
 
-	defer addCustomers(t, []models.Customer{{Id: "an_ID", Name: "Johnny", Email: "a@b.c"}})(t)
-	testCases := []struct {
-		name       string
-		id         string
-		statusCode int
-		expRes     map[string]any
-	}{
-		{
-			name:       "get unknow customer",
-			id:         "unknow_id",
-			statusCode: http.StatusNotFound,
-			expRes:     map[string]any{"errorId": float64(3000), "message": "(3000) fail to get customer id=unknow_id: customer id=unknow_id not found in repository"},
-		},
-		{
-			name:       "get customer (ID ok)",
-			id:         "an_ID",
-			statusCode: http.StatusOK,
-			expRes:     map[string]any{"id": "an_ID", "name": "Johnny", "email": "a@b.c"},
-		},
-	}
+	require.Equal(t, expUser.ID, res.ID)
+	require.Equal(t, expUser.Username, res.Username)
+	require.Equal(t, expUser.Email, res.Email)
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			rec := setupTest(t, http.MethodGet, "/customers/:id", fmt.Sprintf("/customers/%v", tc.id), (&CustomerCtl{service}).GetCustomer, nil)
-
-			// check status code
-			assert.Equal(t, tc.statusCode, rec.Code)
-			res := make(map[string]any)
-
-			if assert.NoError(t, json.NewDecoder(rec.Body).Decode(&res), "unexpected error") {
-				assert.Equal(t, tc.expRes, res)
-			}
-		})
-	}
-}
-
-func TestCustomerCtl_DeleteCustomer(t *testing.T) {
-	// Create a fake user to add to repository
-	u := models.User{Id: "u_ID", Username: "Jonathan", Password: "jonathan_password"}
-	defer addUsers(t, u)(t)
-
-	// Create repo Repo
-	repo := postgres.NewCustomerRepo(db)
-	service := services.NewCustomerService(repo)
-
-	defer addCustomers(t, []models.Customer{{Id: "an_ID", Name: "Johnny", Email: "a@b.c"}})(t)
-	testCases := []struct {
-		name       string
-		id         string
-		statusCode int
-	}{
-		{
-			name:       "remove unknow customer",
-			id:         "unknow_id",
-			statusCode: http.StatusNoContent,
-		},
-		{
-			name:       "remove customer (ID ok)",
-			id:         "an_ID",
-			statusCode: http.StatusNoContent,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			rec := setupTest(t, http.MethodDelete, "/customers/:id", fmt.Sprintf("/customers/%v", tc.id), (&CustomerCtl{service}).DeleteCustomer, nil)
-
-			// check status code
-			assert.Equal(t, tc.statusCode, rec.Code)
-		})
-	}
-}
-
-func TestCustomerCtl_AddCustomer(t *testing.T) {
-	// Create a fake user to add to repository
-	u := models.User{Id: "u_ID", Username: "Jonathan", Password: "jonathan_password"}
-	defer addUsers(t, u)(t)
-
-	// Create repo Repo
-	repo := postgres.NewCustomerRepo(db)
-	service := services.NewCustomerService(repo)
-
-	testCases := []struct {
-		name       string
-		body       map[string]string
-		statusCode int
-		expRes     map[string]any
-	}{
-		{
-			name:       "add customer (empty body)",
-			body:       map[string]string{},
-			statusCode: http.StatusBadRequest,
-			expRes:     map[string]any{"errorId": float64(2000), "message": "customer body should contain at least a name"},
-		},
-		{
-			name:       "add customer OK",
-			body:       map[string]string{"name": "Johnny", "email": "a@b.c"},
-			statusCode: http.StatusCreated,
-			expRes:     map[string]any{"name": "Johnny", "email": "a@b.c"},
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			jsonCust, _ := json.Marshal(tc.body)
-			// var b bytes.Buffer // use &b as *io.Reader
-			// json.NewEncoder(b).Encode(tc.body)
-			rec := setupTest(t, http.MethodPost, "/customers", "/customers", (&CustomerCtl{service}).AddCustomer, bytes.NewBuffer(jsonCust))
-
-			// check status code
-			assert.Equal(t, tc.statusCode, rec.Code)
-			res := make(map[string]any)
-
-			if assert.NoError(t, json.NewDecoder(rec.Body).Decode(&res), "unexpected error") {
-				switch tc.statusCode {
-				case http.StatusCreated:
-					assert.Contains(t, res, "id")
-					assert.Equal(t, tc.expRes["name"], res["name"])
-					assert.Equal(t, tc.expRes["email"], res["email"])
-					ll, _ := repo.ListByUser(u.Id)
-					assert.Len(t, ll, 1)
-				default:
-					// error
-					assert.Equal(t, tc.expRes, res)
-				}
-			}
-		})
-	}
+	svc.AssertExpectations(t)
 }

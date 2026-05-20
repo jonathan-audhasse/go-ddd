@@ -1,22 +1,20 @@
 package application
 
 import (
-	healthservice "goddd/internal/application/health"
+	"goddd/internal/application/health"
 	"goddd/internal/application/transaction"
-	userservice "goddd/internal/application/user"
+	"goddd/internal/application/user"
 	"goddd/internal/domain/repository"
 )
 
-// Services holds the service object
 type Services struct {
-	healthservice.HealthService
-	userservice.UserService
+	Health health.HealthService
+	User   user.UserService
 }
 
-// NewServices instantiate services
 func NewServices(repo *repository.Repository, tm transaction.TransactionManager) *Services {
 	return &Services{
-		HealthService: healthservice.NewHealthService(repo.HealthRepo),
-		UserService:   userservice.NewUserService(repo.UserRepo, tm),
+		Health: health.NewHealthService(repo.HealthRepo),
+		User:   user.NewUserService(repo.UserRepo, tm),
 	}
 }

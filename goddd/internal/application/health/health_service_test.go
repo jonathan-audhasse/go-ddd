@@ -1,4 +1,4 @@
-package healthservice_test
+package health_test
 
 import (
 	"context"

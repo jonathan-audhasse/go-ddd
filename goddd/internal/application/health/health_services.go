@@ -1,4 +1,4 @@
-package healthservice
+package health
 
 import (
 	"context"

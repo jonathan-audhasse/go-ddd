@@ -3,68 +3,97 @@ package api
 import (
 	"context"
 	"fmt"
-	"goddd/domain/services"
-	"goddd/infra/repositories/postgres"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	_ "github.com/lib/pq"
+	"goddd/api/controller"
+	"goddd/internal/application"
+	"goddd/internal/infrastructure/http/router"
+	"goddd/internal/infrastructure/persistence/postgres"
+	"goddd/internal/infrastructure/persistence/transaction"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/rs/zerolog/log"
 )
 
-type Api struct {
-	server  *http.Server
-	closeDb func()
+type API struct {
+	server *http.Server
+	db     *pgxpool.Pool
 }
 
-func NewApi(cfg Config) Api {
-	// repo := memory.NewRepository()
-	repo, closeDb, err := postgres.NewRepository()
+func NewAPI(cfg Config) (*API, error) {
+	ctx := context.Background()
+
+	// db
+	db, err := postgres.Open(ctx, cfg.DatabaseURL)
 	if err != nil {
-		log.Fatalf("failed to connect to DB. err=%s", err)
+		return nil, fmt.Errorf("open db: %w", err)
 	}
-	// init services
-	services := services.NewServices(repo)
-	if err != nil {
-		log.Panic(err)
+
+	// repositories
+	repos := postgres.NewRepository(db)
+
+	// transaction manager
+	tm := transaction.NewTransactionManager(db)
+
+	// services
+	services := application.NewServices(repos, tm)
+
+	// controllers
+	healthCtrl := controller.NewHealthController(services.Health)
+	userCtrl := controller.NewUserController(services.User)
+
+	// router
+	r := router.NewRouter(healthCtrl, userCtrl)
+
+	srv := &http.Server{
+		Addr:         fmt.Sprintf(":%d", cfg.APIPort),
+		Handler:      r,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  60 * time.Second,
 	}
-	return Api{
-		server: &http.Server{
-			Addr:    fmt.Sprintf(":%d", cfg.ApiPort),
-			Handler: NewRouter(services).Handler(),
-		},
-		closeDb: closeDb,
-	}
+
+	return &API{
+		server: srv,
+		db:     db,
+	}, nil
 }
 
-// server
-func (a Api) Serve() {
-	// run server in a thread
+func (a *API) Close(ctx context.Context) error {
+	a.db.Close()
+	return nil
+}
+
+func (a *API) Serve() error {
+	// run server in goroutine
 	go func() {
-		log.Printf("Listen server (port %s)...\n", a.server.Addr)
+		log.Info().Str("addr", a.server.Addr).Msg("starting http server")
+
 		if err := a.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("listen: %s\n", err)
+			log.Fatal().Err(err).Msg("server crashed")
 		}
 	}()
 
-	// Wait for interrupt signal to gracefully shutdown the server.
+	// wait for interrupt
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
-	log.Println("Shutting down server...")
 
-	// set a timeout of 5 seconds to let the server handle the current unfinished request
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	log.Info().Msg("shutting down server...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// force server shutdown
 	if err := a.server.Shutdown(ctx); err != nil {
-		log.Fatal("Server forced to shutdown:", err)
+		log.Error().Err(err).Msg("failed to shutdown server cleanly")
 	}
-	// close DB
-	a.closeDb()
-	log.Println("Server exiting")
+
+	_ = a.Close(ctx)
+
+	log.Info().Msg("server stopped")
+	return nil
 }
