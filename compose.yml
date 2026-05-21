@@ -2,8 +2,8 @@ services:
   app:
     build: .
     working_dir: /go-ddd
-    # profiles:
-    #   - dev
+    profiles:
+       - dev
     volumes:
       - .:/go-ddd:rw
     env_file: .env

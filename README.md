@@ -13,9 +13,9 @@ goddd/
 │
 ├── internal/
 │   ├── api/                            # presentation layer
-│   │   ├── controller/                 # controllers
-│   │   │   ├── health_controller.go
-│   │   │   └── user_controller.go
+│   │   ├── handler/                    # handlers
+│   │   │   ├── health_handler.go
+│   │   │   └── user_handler.go
 │   │   ├── httperror/                 # controllers
 │   │   │   └── httperror.go
 │   │   └── middleware/
