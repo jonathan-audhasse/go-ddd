@@ -47,13 +47,13 @@ func NewPGContainer(ctx context.Context) (*PgContainer, error) {
 		return nil, fmt.Errorf("failed to get postgres connection string: %w", err)
 	}
 
-	pool, err := postgres.Open(ctx, dsn)
+	pool, err := postgres.Open(ctx, dsn, "")
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to test DB: %w", err)
 	}
 
 	// run migration
-	migrations.Up(pool, testSchemaName)
+	migrations.Up(dsn, testSchemaName)
 
 	return &PgContainer{
 		container: container,

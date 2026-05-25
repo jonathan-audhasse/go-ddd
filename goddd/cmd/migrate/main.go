@@ -8,8 +8,6 @@ import (
 	"goddd/internal/infrastructure/persistence/migrations"
 )
 
-const schemaName = "goddd"
-
 func main() {
 
 	cmd := flag.String("cmd", "up", "up | down | steps | version")
@@ -21,19 +19,22 @@ func main() {
 		panic(err)
 	}
 
+	dsn := app.Config.DatabaseURL()
+	schemaName := app.SchemaName
+
 	switch *cmd {
 
 	case "up":
-		err = migrations.Up(app.DB, schemaName)
+		err = migrations.Up(dsn, app.SchemaName)
 
 	case "down":
-		err = migrations.Down(app.DB, schemaName)
+		err = migrations.Down(dsn, schemaName)
 
 	case "steps":
-		err = migrations.Steps(app.DB, schemaName, *steps)
+		err = migrations.Steps(dsn, schemaName, *steps)
 
 	case "version":
-		v, dirty, err := migrations.Version(app.DB, schemaName)
+		v, dirty, err := migrations.Version(dsn, schemaName)
 
 		if err != nil {
 			app.Logger.Fatal().Err(err).Msg("failed to get migration version")

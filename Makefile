@@ -50,14 +50,14 @@ down-dev: ## Stop and remove all mounted services (for dev)
 
 test: up ## Run tests
 	$(call info, "launching unit test")
-	docker compose run --rm --no-deps --entrypoint=go server test ./...
+	docker compose run --rm --no-deps --entrypoint=go app test ./...
 
 #-----------#
 #  Helpers  #
 #-----------#
 
 logs: ## Visualize the last 100 docker logs
-	docker compose logs server | tail -100
+	docker compose logs app | tail -100
 
 fmt: ## Formatter
 	go fmt ./...
@@ -70,7 +70,7 @@ lint: ## Run linter (ref: https://golangci-lint.run)
 #-----------------#
 
 zsh-mode: up ## Mount services for local dev
-	docker compose exec server /bin/zsh
+	docker compose exec app /bin/zsh
 
 #------------#
 #  Generate  #

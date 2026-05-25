@@ -22,7 +22,6 @@ func NewHealthRepository(pool *pgxpool.Pool) repository.HealthRepository {
 func (r *healthRepository) Ping(ctx context.Context) error {
 	logger := log.Ctx(ctx)
 	logger.Debug().Msg("try to ping database...")
-	// log.Ctx(ctx).Debug().Msg("try to ping database...")
 	if err := r.db.Ping(ctx); err != nil {
 		log.Ctx(ctx).Err(err).Msg("failed to ping postgres")
 		return repository.ErrFailToPing

@@ -4,20 +4,21 @@ import (
 	"context"
 
 	"goddd/internal/application"
-	"goddd/internal/domain/repository"
 	"goddd/internal/infrastructure/config"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog"
 )
 
+const schemaName = "public"
+
 // App holds the App bootstrap object
 type App struct {
-	Config   *config.Config
-	Logger   zerolog.Logger
-	DB       *pgxpool.Pool
-	Repos    *repository.Repositories
-	Services *application.Services
+	Config     *config.Config
+	Logger     zerolog.Logger
+	DB         *pgxpool.Pool
+	Services   *application.Services
+	SchemaName string
 }
 
 // New instantiates a new app
@@ -32,7 +33,7 @@ func New(ctx context.Context) (*App, error) {
 	log := LoadLogger(cfg.LogLevel)
 
 	// load database
-	db, err := NewDatabase(ctx, cfg)
+	db, err := NewDatabase(ctx, cfg, schemaName)
 	if err != nil {
 		return nil, err
 	}
@@ -44,10 +45,10 @@ func New(ctx context.Context) (*App, error) {
 	services := LoadServices(db, repos)
 
 	return &App{
-		Config:   cfg,
-		Logger:   log,
-		DB:       db,
-		Repos:    repos,
-		Services: services,
+		Config:     cfg,
+		Logger:     log,
+		DB:         db,
+		Services:   services,
+		SchemaName: schemaName,
 	}, nil
 }

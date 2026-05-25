@@ -18,7 +18,8 @@ func NewRouter(services *application.Services) http.Handler {
 	// middleware
 	// r.Use(middleware.RequestID)
 	// r.Use(middleware.RealIP)
-	r.Use(appmdw.LoggerHandler)
+	r.Use(middleware.Logger)    // to log routes (GET, POST, ...)
+	r.Use(appmdw.LoggerHandler) // to application log
 	r.Use(middleware.Recoverer)
 
 	// use CORS

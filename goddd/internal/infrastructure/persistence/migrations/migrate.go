@@ -1,15 +1,16 @@
 package migrations
 
 import (
+	"database/sql"
 	"embed"
 	"errors"
+	"fmt"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
-	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/jackc/pgx/v5/stdlib"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/rs/zerolog/log"
 )
 
@@ -18,6 +19,8 @@ var (
 	migrationsFS embed.FS
 
 	// errors
+	ErrFailedToOpenDb       = errors.New("failed to open database from source name")
+	ErrToCreateSchema       = errors.New("failed to create database schema")
 	ErrInitDbDriver         = errors.New("failed to have a database driver")
 	ErrDbDriverInstance     = errors.New("failed to have a new database driver instance")
 	ErrFailedToMigrateUp    = errors.New("failed to migrate DB schema up")
@@ -25,20 +28,29 @@ var (
 	ErrFailedToMigrateSteps = errors.New("failed to migrate DB schema steps up")
 )
 
-// newMigrate bridges pgxpool → database/sql so go-migrate can use it.
-// pgx/v5/stdlib.OpenDBFromPool wraps the pool without opening a new connection.
-func newMigrate(pool *pgxpool.Pool, schemaName string) (*migrate.Migrate, error) {
-	db := stdlib.OpenDBFromPool(pool)
-
-	driver, err := postgres.WithInstance(db, &postgres.Config{})
+// newMigrate
+func newMigrate(dsn, schemaName string) (*migrate.Migrate, error) {
+	db, err := sql.Open("pgx", dsn)
 	if err != nil {
-		log.Err(err).Msg("failed to have a database driver")
+		return nil, ErrFailedToOpenDb
+	}
+
+	if _, err := db.Exec(
+		fmt.Sprintf(`CREATE SCHEMA IF NOT EXISTS %q`, schemaName),
+	); err != nil {
+		return nil, fmt.Errorf("create schema: %w", err)
+	}
+
+	driver, err := postgres.WithInstance(db, &postgres.Config{
+		SchemaName: schemaName,
+	})
+	if err != nil {
 		return nil, ErrInitDbDriver
 	}
 
 	sourceDriver, err := iofs.New(migrationsFS, "files")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("init source: %w", err)
 	}
 
 	m, err := migrate.NewWithInstance(
@@ -48,7 +60,6 @@ func newMigrate(pool *pgxpool.Pool, schemaName string) (*migrate.Migrate, error)
 		driver,
 	)
 
-	// m, err := migrate.NewWithDatabaseInstance(migrationsPath, schemaName, driver)
 	if err != nil {
 		log.Err(err).Msg("failed to have a new database driver instance")
 		return nil, ErrDbDriverInstance
@@ -58,10 +69,10 @@ func newMigrate(pool *pgxpool.Pool, schemaName string) (*migrate.Migrate, error)
 
 // Up applies every pending migration in ascending version order.
 // Returns nil if already up to date.
-func Up(pool *pgxpool.Pool, schemaName string) error {
+func Up(dsn, schemaName string) error {
 	logger := log.With().Any("migrationsFS", migrationsFS).Logger()
 	logger.Info().Msg("migrate database up...")
-	m, err := newMigrate(pool, schemaName)
+	m, err := newMigrate(dsn, schemaName)
 	if err != nil {
 		return err
 	}
@@ -75,10 +86,10 @@ func Up(pool *pgxpool.Pool, schemaName string) error {
 
 // Down rolls back every applied migration, reverting the database to a clean state.
 // Suitable for tests; avoid in production unless you know what you're doing.
-func Down(pool *pgxpool.Pool, schemaName string) error {
+func Down(dsn, schemaName string) error {
 	logger := log.With().Any("migrationsFS", migrationsFS).Logger()
 	logger.Info().Msg("migrate database down...")
-	m, err := newMigrate(pool, schemaName)
+	m, err := newMigrate(dsn, schemaName)
 	if err != nil {
 		return err
 	}
@@ -91,10 +102,10 @@ func Down(pool *pgxpool.Pool, schemaName string) error {
 }
 
 // Steps applies n migrations (positive = forward, negative = backward).
-func Steps(pool *pgxpool.Pool, schemaName string, n int) error {
+func Steps(dsn, schemaName string, n int) error {
 	logger := log.With().Any("migrationsFS", migrationsFS).Int("n", n).Logger()
 	logger.Info().Msg("migrate database steps up ...")
-	m, err := newMigrate(pool, schemaName)
+	m, err := newMigrate(dsn, schemaName)
 	if err != nil {
 		return err
 	}
@@ -107,8 +118,8 @@ func Steps(pool *pgxpool.Pool, schemaName string, n int) error {
 
 // Version returns the currently applied migration version and whether the
 // database is in a dirty state (a previous migration failed mid-way).
-func Version(pool *pgxpool.Pool, schemaName string) (version uint, dirty bool, err error) {
-	m, err := newMigrate(pool, schemaName)
+func Version(dsn, schemaName string) (version uint, dirty bool, err error) {
+	m, err := newMigrate(dsn, schemaName)
 	if err != nil {
 		return 0, false, err
 	}
