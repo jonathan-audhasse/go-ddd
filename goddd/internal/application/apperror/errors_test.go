@@ -17,7 +17,6 @@ func TestToAppError(t *testing.T) {
 	}{
 		{name: "repository.ErrUserNotFound", err: repository.ErrUserNotFound, res: apperror.ErrNotFound},
 		{name: "repository.ErrUserEmailAlreadyExist", err: repository.ErrUserEmailAlreadyExist, res: apperror.ErrUnprocessable},
-		{name: "repository.ErrFailToPing", err: repository.ErrFailToPing, res: apperror.ErrUnavailable},
 		{name: "repository.ErrFailedToFindUserById", err: repository.ErrFailedToFindUserById, res: apperror.ErrInternal},
 		{name: "repository.ErrFailedToCreateUser", err: repository.ErrFailedToCreateUser, res: apperror.ErrInternal},
 		{name: "repository.ErrFailedToUpdateUser", err: repository.ErrFailedToUpdateUser, res: apperror.ErrInternal},

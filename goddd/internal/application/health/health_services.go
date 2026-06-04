@@ -2,31 +2,38 @@ package health
 
 import (
 	"context"
+	"fmt"
 	"goddd/internal/application/apperror"
-	"goddd/internal/domain/repository"
 )
+
+var ErrFailToCheckHealth = fmt.Errorf("%w: failed to check health", apperror.ErrUnavailable.Error())
 
 // HealthService Interface
 type HealthService interface {
 	IsHealthy(context.Context) error
 }
 
+// Pinger a service to check repository connection
+type Pinger interface {
+	Ping(context.Context) error
+}
+
 // service for asset's services implementation
 type service struct {
-	repo repository.HealthRepository
+	pinger Pinger
 }
 
 // Create the HealthService
-func NewHealthService(repo repository.HealthRepository) HealthService {
-	return &service{repo}
+func NewHealthService(pinger Pinger) HealthService {
+	return &service{pinger}
 }
 
 // IsHealthy health check
 func (hs *service) IsHealthy(ctx context.Context) error {
 
 	// ping repo
-	if err := hs.repo.Ping(ctx); err != nil {
-		return apperror.ToAppError(err)
+	if err := hs.pinger.Ping(ctx); err != nil {
+		return ErrFailToCheckHealth
 	}
 	// healthy
 	return nil

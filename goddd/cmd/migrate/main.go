@@ -25,7 +25,7 @@ func main() {
 	switch *cmd {
 
 	case "up":
-		err = migrations.Up(dsn, app.SchemaName)
+		err = migrations.Up(dsn, schemaName)
 
 	case "down":
 		err = migrations.Down(dsn, schemaName)

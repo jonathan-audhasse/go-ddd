@@ -57,8 +57,11 @@ func TestMain(m *testing.M) {
 	// transaction manager
 	tm := transaction.NewTransactionManager(db)
 
+	// health pinger
+	pinger := postgres.NewPinger(db)
+
 	// build services
-	services := application.NewServices(repos, tm)
+	services := application.NewServices(repos, tm, pinger)
 
 	// router
 	r := httapi.NewRouter(services)

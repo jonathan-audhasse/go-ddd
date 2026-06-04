@@ -11,6 +11,7 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/lib/pq"
 	"github.com/rs/zerolog/log"
 )
 
@@ -39,6 +40,14 @@ func newMigrate(dsn, schemaName string) (*migrate.Migrate, error) {
 		fmt.Sprintf(`CREATE SCHEMA IF NOT EXISTS %q`, schemaName),
 	); err != nil {
 		return nil, fmt.Errorf("create schema: %w", err)
+	}
+
+	// search_path must be set to the schema name in order to have
+	// schema.table_name,...
+	if _, err := db.Exec(
+		fmt.Sprintf(`SET search_path TO %s`, pq.QuoteIdentifier(schemaName)),
+	); err != nil {
+		return nil, fmt.Errorf("set search_path: %w", err)
 	}
 
 	driver, err := postgres.WithInstance(db, &postgres.Config{

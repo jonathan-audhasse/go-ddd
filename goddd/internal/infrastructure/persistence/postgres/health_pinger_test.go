@@ -9,11 +9,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestHealthRepository_Ping(t *testing.T) {
+func TestHealthPinger_Ping(t *testing.T) {
 	ctx := log.Logger.WithContext(context.Background())
 
 	// set repo
-	repo := postgres.NewHealthRepository(testDB)
+	repo := postgres.NewPinger(testDB)
 	// ping
 	require.NoError(t, repo.Ping(ctx))
 }

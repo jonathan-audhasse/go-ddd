@@ -28,12 +28,13 @@ type Config struct {
 
 // DBConfig holds database configuration
 type DBConfig struct {
-	Host     string `env:"DB_HOST" env-default:"db"`
-	Port     string `env:"DB_PORT" env-default:"5432"`
-	Name     string `env:"DB_NAME" env-default:"postgres"`
-	User     string `env:"DB_USER" env-default:"admin"`
-	Password string `env:"DB_PWD" env-default:"abc123"`
-	SslMode  string `env:"SSL_MODE" env-default:"prefer"`
+	Host       string `env:"DB_HOST" env-default:"db"`
+	Port       string `env:"DB_PORT" env-default:"5432"`
+	Name       string `env:"DB_NAME" env-default:"postgres"`
+	User       string `env:"DB_USER" env-default:"admin"`
+	Password   string `env:"DB_PWD" env-default:"abc123"`
+	SslMode    string `env:"SSL_MODE" env-default:"prefer"`
+	SchemaName string `env:"DB_SCHEMA" env-default:"public"`
 }
 
 // DatabaseURL return the database URL

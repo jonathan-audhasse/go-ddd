@@ -1,47 +1,6 @@
 services:
-  app:
-    build: .
-    working_dir: /go-ddd
-    profiles:
-       - dev
-    volumes:
-      - .:/go-ddd:rw
-    env_file: .env
-    ports:
-      - 8000:8000
-    tty: true
-    stop_signal: SIGINT
-    depends_on:
-      db:
-       condition: service_healthy
-      #migrate:
-      #  condition: service_completed_successfully
-    entrypoint: tail -f /dev/null
-    # entrypoint: ./db/pgwait.sh
-    # command: go run src/main.go
-    # healthcheck:
-    #     test: curl --fail localhost:8000/health || exit 1
-    #     interval: 10s
-    #     timeout: 3s
-    #     retries: 3
-  
 
-  # api:
-  #   build: .
-  #   command: ["/app/api"]
-  #   depends_on:
-  #     migrate:
-  #       condition: service_completed_successfully
-
-  # migrate:
-  #   build: .
-  #   command: ["/app/migrate", "-cmd=up"]
-  #   environment:
-  #     DATABASE_URL: postgres://postgres:postgres@db:5432/myapp?sslmode=disable
-  #   depends_on:
-  #     db:
-  #       condition: service_healthy
-
+  ## Database
   db:
     image: postgres:18
     environment:
@@ -56,3 +15,89 @@ services:
       interval: 5s
       timeout: 3s
       retries: 2
+
+  ## Migration
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    command: ["/app/migrate", "-cmd=up"]
+    profiles:
+      - dev
+      - prod
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  # Migration for e2e tests
+  migrate-e2e:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    command: ["/app/migrate", "-cmd=up"]
+    profiles:
+      - e2e
+    env_file: .env.test
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  app-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    working_dir: /go-ddd
+    profiles:
+       - dev
+    volumes:
+      - .:/go-ddd:rw
+    env_file: .env
+    ports:
+      - 8000:8000
+    tty: true
+    stop_signal: SIGINT
+    depends_on:
+      migrate:
+       condition: service_completed_successfully
+    entrypoint: tail -f /dev/null
+
+  app-e2e:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    command: ["/app/api"]
+    profiles:
+      - e2e
+    env_file: .env
+    ports:
+      - 8001:8000
+    depends_on:
+      migrate-e2e:
+        condition: service_completed_successfully
+    healthcheck:
+        test: curl --fail localhost:8000/health || exit 1
+        interval: 10s
+        timeout: 3s
+        retries: 3
+
+  app-prod:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    command: ["/app/api"]
+    profiles:
+      - prod
+    env_file: .env
+    ports:
+      - 8000:8000
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+        test: curl --fail localhost:8000/health || exit 1
+        interval: 10s
+        timeout: 3s
+        retries: 3

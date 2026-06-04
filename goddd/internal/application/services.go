@@ -12,9 +12,14 @@ type Services struct {
 	User   user.UserService
 }
 
-func NewServices(repo *repository.Repositories, tm transaction.TransactionManager) *Services {
+// NewServices instantiates new services
+func NewServices(
+	repo *repository.Repositories,
+	tm transaction.TransactionManager,
+	pinger health.Pinger,
+) *Services {
 	return &Services{
-		Health: health.NewHealthService(repo.HealthRepo),
+		Health: health.NewHealthService(pinger),
 		User:   user.NewUserService(repo.UserRepo, tm),
 	}
 }

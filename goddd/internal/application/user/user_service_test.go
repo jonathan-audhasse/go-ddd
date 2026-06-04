@@ -2,6 +2,7 @@ package user_test
 
 import (
 	"context"
+	"goddd/internal/application/apperror"
 	"goddd/internal/application/dto"
 	user "goddd/internal/application/user"
 	"goddd/internal/domain/models"
@@ -44,7 +45,7 @@ func TestUserService_CreateNewUser(t *testing.T) {
 			create: func(context.Context, models.NewUser) (models.User, error) {
 				return models.User{}, mockErr
 			},
-			expErr: mockErr,
+			expErr: apperror.ErrInternal,
 		},
 		{
 			name: "succeed to create new user",
@@ -83,23 +84,26 @@ func TestUserService_GetUser(t *testing.T) {
 	id := uuid.New()
 
 	testCases := []struct {
-		name   string
-		expErr error
+		name    string
+		mockErr error
+		expErr  error
 	}{
 		{
-			name:   "failed to insert into repository",
-			expErr: gofakeit.Error(),
+			name:    "failed to insert into repository",
+			mockErr: gofakeit.Error(),
+			expErr:  apperror.ErrInternal,
 		},
 		{
-			name:   "succeed to create new user",
-			expErr: nil,
+			name:    "succeed to create new user",
+			mockErr: nil,
+			expErr:  nil,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			repo := mockrepo.NewMockUserRepository(t)
-			repo.EXPECT().FindByID(mock.Anything, id).Return(&expUser, tc.expErr)
+			repo.EXPECT().FindByID(mock.Anything, id).Return(&expUser, tc.mockErr)
 			srv := user.NewUserService(repo, nil)
 
 			res, err := srv.GetUser(ctx, id)

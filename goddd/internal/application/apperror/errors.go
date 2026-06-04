@@ -21,8 +21,6 @@ func ToAppError(err error) error {
 		return fmt.Errorf("%w: %s", ErrNotFound, err.Error())
 	case errors.Is(err, repository.ErrUserEmailAlreadyExist):
 		return fmt.Errorf("%w: %s", ErrUnprocessable, err.Error())
-	case errors.Is(err, repository.ErrFailToPing):
-		return fmt.Errorf("%w: %s", ErrUnavailable, err.Error())
 	}
 
 	return ErrInternal

@@ -3,7 +3,7 @@ package health_test
 import (
 	"context"
 	healthservice "goddd/internal/application/health"
-	mockRepo "goddd/tests/mocks/repository"
+	mockService "goddd/tests/mocks/service"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
@@ -15,7 +15,7 @@ func TestHealthService_IsReady(t *testing.T) {
 
 	t.Run("not healthy", func(t *testing.T) {
 		// mock repo behavior
-		repo := mockRepo.NewMockHealthRepository(t)
+		repo := mockService.NewMockPinger(t)
 		repo.EXPECT().Ping(ctx).Return(gofakeit.Error())
 
 		srv := healthservice.NewHealthService(repo)
@@ -24,7 +24,7 @@ func TestHealthService_IsReady(t *testing.T) {
 
 	t.Run("healthy", func(t *testing.T) {
 		// mock repo behavior
-		repo := mockRepo.NewMockHealthRepository(t)
+		repo := mockService.NewMockPinger(t)
 		repo.EXPECT().Ping(ctx).Return(nil)
 
 		srv := healthservice.NewHealthService(repo)

@@ -10,8 +10,6 @@ import (
 	"github.com/rs/zerolog"
 )
 
-const schemaName = "public"
-
 // App holds the App bootstrap object
 type App struct {
 	Config     *config.Config
@@ -33,7 +31,7 @@ func New(ctx context.Context) (*App, error) {
 	log := LoadLogger(cfg.LogLevel)
 
 	// load database
-	db, err := NewDatabase(ctx, cfg, schemaName)
+	db, err := NewDatabase(ctx, cfg, cfg.SchemaName)
 	if err != nil {
 		return nil, err
 	}
@@ -49,6 +47,6 @@ func New(ctx context.Context) (*App, error) {
 		Logger:     log,
 		DB:         db,
 		Services:   services,
-		SchemaName: schemaName,
+		SchemaName: cfg.SchemaName,
 	}, nil
 }

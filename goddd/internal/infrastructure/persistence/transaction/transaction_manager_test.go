@@ -50,6 +50,7 @@ func TestTransactionManager_Do_Rollbacks(t *testing.T) {
 
 	email := gofakeit.Email()
 	username := gofakeit.Username()
+	mockErr := gofakeit.Error()
 
 	err := tm.Do(ctx, func(ctx context.Context) error {
 		tx, ok := transaction.GetTx(ctx)
@@ -62,11 +63,11 @@ func TestTransactionManager_Do_Rollbacks(t *testing.T) {
 		require.NoError(t, err)
 
 		// force failure
-		return gofakeit.Error()
+		return mockErr
 	})
 
 	// expect ErrFailedToCommit when failed
-	require.ErrorIs(t, err, transaction.ErrFailedToCommit)
+	require.ErrorIs(t, err, mockErr)
 
 	// row should NOT exist because rollback happened
 	var count int

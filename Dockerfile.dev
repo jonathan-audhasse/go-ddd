@@ -16,5 +16,4 @@ RUN cd goddd && \
     go install github.com/go-delve/delve/cmd/dlv@latest
 
 RUN cd goddd && go mod tidy
-#run server
-#CMD go run goddd/cmd/api/main.go
+CMD tail -f /dev/null
