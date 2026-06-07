@@ -39,6 +39,7 @@ func (s *service) CreateNewUser(ctx context.Context, req dto.CreateUserRequest) 
 		// create a new user in repo
 		user, err := s.repo.Create(ctx, req.ToNewUser())
 		if err != nil {
+			log.Err(err).Msg("failed to create a new user")
 			return err
 		}
 		res = user
@@ -62,6 +63,7 @@ func (s *service) GetUser(ctx context.Context, userId uuid.UUID) (*models.User, 
 	// retrieve from repo
 	user, err := s.repo.FindByID(ctx, userId)
 	if err != nil {
+		log.Err(err).Msg("failed to retrieve a new user")
 		return nil, apperror.ToAppError(err)
 	}
 

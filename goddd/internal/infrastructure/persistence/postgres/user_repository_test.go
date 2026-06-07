@@ -26,7 +26,7 @@ func TestUserRepository_FindByID_NotFound(t *testing.T) {
 	assert.ErrorIs(t, err, repository.ErrUserNotFound)
 }
 
-func TestUserRepository_FindByID(t *testing.T) {
+func TestUserRepository_FindByID_OK(t *testing.T) {
 	ctx := log.Logger.WithContext(t.Context())
 	ctx, tx, rollback := testutils.WithTx(t, ctx, testDB)
 

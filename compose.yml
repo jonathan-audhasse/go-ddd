@@ -71,7 +71,7 @@ services:
     command: ["/app/api"]
     profiles:
       - e2e
-    env_file: .env
+    env_file: .env.test
     ports:
       - 8001:8000
     depends_on:

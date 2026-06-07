@@ -3,47 +3,86 @@ package e2e_test
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"goddd/internal/application/dto"
 	"goddd/internal/domain/models"
+	"io"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
+	"github.com/brianvoe/gofakeit/v7"
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestCreateUser(t *testing.T) {
-	resetDB(t)
 
-	body := dto.CreateUserRequest{
-		Username: "john",
-		Email:    "john@test.com",
+	req := dto.CreateUserRequest{
+		Username: gofakeit.Username(),
+		Email:    gofakeit.Email(),
 	}
 
-	b, err := json.Marshal(body)
+	b, err := json.Marshal(req)
 	require.NoError(t, err)
 
-	req := httptest.NewRequest(
-		http.MethodPost,
-		"/users",
-		bytes.NewReader(b),
-	)
+	reader := bytes.NewReader(b)
+	res, err := http.Post(fmt.Sprintf(e2eBaseUrl+"/users"), "application/json", reader)
 
-	req.Header.Set("Content-Type", "application/json")
+	require.NoError(t, err)
+	require.Equal(t, http.StatusCreated, res.StatusCode)
 
-	rec := httptest.NewRecorder()
+	// assertion
+	resPostData, err := io.ReadAll(res.Body)
+	require.NoError(t, err)
+	require.Equal(t, "application/json", res.Header.Get("Content-Type"))
 
-	testHandler.ServeHTTP(rec, req)
+	var resPostUser models.User
+	require.NoError(t, json.Unmarshal(resPostData, &resPostUser))
 
-	require.Equal(t, http.StatusCreated, rec.Code)
-	require.Equal(t, "application/json", rec.Header().Get("Content-Type"))
+	assert.NotEqual(t, uuid.Nil, resPostUser.ID)
+	assert.Equal(t, req.Username, resPostUser.Username)
+	assert.Equal(t, req.Email, resPostUser.Email)
+	assert.False(t, resPostUser.CreatedAt.IsZero())
 
-	var res models.User
-	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &res))
+	// try to retrieve test
+	res, err = http.Get(fmt.Sprintf("%s/users/%s", e2eBaseUrl, resPostUser.ID.String()))
+	require.Equal(t, http.StatusOK, res.StatusCode)
+	require.NoError(t, err)
 
-	require.NotEqual(t, uuid.Nil, res.ID)
-	require.Equal(t, body.Username, res.Username)
-	require.Equal(t, body.Email, res.Email)
-	require.False(t, res.CreatedAt.IsZero())
+	// assertion
+	resGetData, err := io.ReadAll(res.Body)
+	require.NoError(t, err)
+
+	var data map[string]string
+	require.NoError(t, json.Unmarshal(resGetData, &data))
+
+	expRes := map[string]string{
+		"ID":        resPostUser.ID.String(),
+		"Email":     req.Email,
+		"Username":  req.Username,
+		"CreatedAt": resPostUser.CreatedAt.Format("2006-01-02T15:04:05.999999Z"),
+		"UpdatedAt": resPostUser.UpdatedAt.Format("2006-01-02T15:04:05.999999Z"),
+	}
+	assert.Equal(t, expRes, data)
+}
+
+func TestFailedToGetUser(t *testing.T) {
+	res, err := http.Get(fmt.Sprintf(e2eBaseUrl + "/users/invalid-id"))
+	require.NoError(t, err)
+
+	require.Equal(t, http.StatusBadRequest, res.StatusCode)
+
+	// assertion
+	resData, err := io.ReadAll(res.Body)
+	require.NoError(t, err)
+
+	var data map[string]string
+	require.NoError(t, json.Unmarshal(resData, &data))
+
+	expRes := map[string]string{
+		"code":    "INVALID_INPUT",
+		"message": "invalid input",
+	}
+	assert.Equal(t, expRes, data)
 }

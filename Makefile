@@ -39,13 +39,13 @@ down: ## Stop and Remove all mounted services
 	docker compose down --remove-orphans
 
 up-dev: ## Mount services for dev purpose
-	docker compose --profile dev up
+	docker compose --profile dev up -d
 
 down-dev: ## Stop and remove all mounted services (for dev)
 	docker compose --profile dev down --remove-orphans
 
 up-e2e: ## Mount services for e2e purpose
-	docker compose --profile e2e up
+	docker compose --profile e2e up -d
 
 down-e2e: ## Stop and remove all mounted services (for e2e)
 	docker compose --profile e2e down --remove-orphans

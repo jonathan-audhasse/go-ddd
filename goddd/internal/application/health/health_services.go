@@ -6,7 +6,7 @@ import (
 	"goddd/internal/application/apperror"
 )
 
-var ErrFailToCheckHealth = fmt.Errorf("%w: failed to check health", apperror.ErrUnavailable.Error())
+var ErrFailToCheckHealth = fmt.Errorf("%w: failed to check health", apperror.ErrUnavailable)
 
 // HealthService Interface
 type HealthService interface {

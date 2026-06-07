@@ -112,11 +112,11 @@ func (r *userRepository) FindPaged(ctx context.Context, page repository.Page) (r
 	return res, nil
 }
 
-// Create adds a new user to repository
+// Create inserts a new user to repository
 func (r *userRepository) Create(ctx context.Context, newUser models.NewUser) (models.User, error) {
 	logger := log.Ctx(ctx).With().Any("newUser", newUser).Logger()
 
-	logger.Debug().Msg("creating a new user to repo...")
+	logger.Debug().Msg("inserting a new user to repo...")
 
 	// retrieve queries
 	q := getQueries(ctx, r.pool)
@@ -126,7 +126,7 @@ func (r *userRepository) Create(ctx context.Context, newUser models.NewUser) (mo
 		Username: newUser.Username,
 	})
 	if err != nil {
-		logger.Err(err).Msg("failed to add user to repo")
+		logger.Err(err).Msg("failed to insert user to repo")
 
 		var pqErr *pgconn.PgError
 		if errors.As(err, &pqErr) {
@@ -141,7 +141,7 @@ func (r *userRepository) Create(ctx context.Context, newUser models.NewUser) (mo
 	// Reflect any DB-generated values (e.g. defaults).
 	res := toDomain(row)
 
-	logger.Debug().Msg("succeed to add new user to repo")
+	logger.Debug().Msg("insert user to repo succeeded")
 
 	return res, nil
 }
@@ -176,11 +176,11 @@ func (*userRepository) BulkCreates(ctx context.Context, users []models.NewUser) 
 		pgx.CopyFromRows(rows),
 	)
 	if err != nil {
-		logger.Err(err).Msg("failed to add users in repo")
+		logger.Err(err).Msg("failed to insert users in repo")
 		return 0, ErrFailedToBulkInsert
 	}
 
-	logger.Debug().Int64("count", count).Msg("users added")
+	logger.Debug().Int64("count", count).Msg("bulk insert succeeded")
 
 	return count, nil
 }
@@ -214,6 +214,8 @@ func (r *userRepository) Update(ctx context.Context, user models.User) (models.U
 	}
 	res := toDomain(row)
 
+	logger.Debug().Msg("update succeeded")
+
 	return res, nil
 }
 
@@ -230,6 +232,8 @@ func (r *userRepository) Delete(ctx context.Context, id uuid.UUID) error {
 		logger.Err(err).Msg("failed to delete user")
 		return repository.ErrFailedToDeleteUser
 	}
+
+	logger.Debug().Msg("delete succeeded")
 	return nil
 }
 
