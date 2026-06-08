@@ -32,23 +32,23 @@ clean:
 #  Mount Services  #
 #------------------#
 
-up: ## Mount services
-	docker compose up -d
-
-down: ## Stop and Remove all mounted services
-	docker compose down --remove-orphans
-
-up-dev: ## Mount services for dev purpose
+up: ## Mount the container for dev purpose
 	docker compose --profile dev up -d
 
-down-dev: ## Stop and remove all mounted services (for dev)
+down: ## Stop and remove all mounted services (for dev)
 	docker compose --profile dev down --remove-orphans
 
-up-e2e: ## Mount services for e2e purpose
+up-e2e: ## Mount services for e2e tests
 	docker compose --profile e2e up -d
 
 down-e2e: ## Stop and remove all mounted services (for e2e)
 	docker compose --profile e2e down --remove-orphans
+
+up-local: ## Mount the api locally
+	docker compose --profile local up -d
+
+down-local: ## Stop and remove all mounted services (local profile)
+	docker compose --profile local down --remove-orphans
 
 #---------#
 #  Tests  #

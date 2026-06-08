@@ -16,36 +16,11 @@ services:
       timeout: 3s
       retries: 2
 
-  ## Migration
-  migrate:
-    build:
-      context: .
-      dockerfile: Dockerfile.prod
-    command: ["/app/migrate", "-cmd=up"]
-    profiles:
-      - dev
-      - prod
-    env_file: .env
-    depends_on:
-      db:
-        condition: service_healthy
-    restart: "no"
+  #########################################################
+  # Development workspace
+  #########################################################
 
-  # Migration for e2e tests
-  migrate-e2e:
-    build:
-      context: .
-      dockerfile: Dockerfile.prod
-    command: ["/app/migrate", "-cmd=up"]
-    profiles:
-      - e2e
-    env_file: .env.test
-    depends_on:
-      db:
-        condition: service_healthy
-    restart: "no"
-
-  app-dev:
+  dev:
     build:
       context: .
       dockerfile: Dockerfile.dev
@@ -56,26 +31,39 @@ services:
       - .:/go-ddd:rw
     env_file: .env
     ports:
-      - 8000:8000
+      - 8002:8000
     tty: true
     stop_signal: SIGINT
     depends_on:
-      migrate:
-       condition: service_completed_successfully
+      db:
+       condition: service_healthy
     entrypoint: tail -f /dev/null
 
-  app-e2e:
-    build:
-      context: .
-      dockerfile: Dockerfile.prod
+  #########################################################
+  # Local API
+  #########################################################
+
+  migrate:
+    build: .
+    command: ["/app/migrate", "-cmd=up"]
+    profiles:
+      - local
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build: .
     command: ["/app/api"]
     profiles:
-      - e2e
-    env_file: .env.test
+      - local
+    env_file: .env
     ports:
-      - 8001:8000
+      - 8000:8000
     depends_on:
-      migrate-e2e:
+      migrate:
         condition: service_completed_successfully
     healthcheck:
         test: curl --fail localhost:8000/health || exit 1
@@ -83,18 +71,33 @@ services:
         timeout: 3s
         retries: 3
 
-  app-prod:
-    build:
-      context: .
-      dockerfile: Dockerfile.prod
+  #########################################################
+  # E2E Environment
+  #########################################################
+
+
+  # Migration for e2e tests
+  migrate-e2e:
+    build: .
+    command: ["/app/migrate", "-cmd=up"]
+    profiles:
+      - e2e
+    env_file: .env.e2e
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  api-e2e:
+    build: . 
     command: ["/app/api"]
     profiles:
-      - prod
-    env_file: .env
+      - e2e
+    env_file: .env.e2e
     ports:
-      - 8000:8000
+      - 8001:8000
     depends_on:
-      migrate:
+      migrate-e2e:
         condition: service_completed_successfully
     healthcheck:
         test: curl --fail localhost:8000/health || exit 1
