@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"goddd/api/http/httperror"
 	"goddd/internal/application/apperror"
 	"goddd/internal/application/dto"
@@ -12,6 +13,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 )
+
+var ErrInvalidUserId = fmt.Errorf("%w: user Id must be of type uuid", apperror.ErrInvalid)
 
 // UserHandler holds user handlers
 type UserHandler struct {
@@ -56,7 +59,7 @@ func (c *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		log.Err(err).Str("id", idStr).Msg("failed to parse Id to UUID")
-		httperror.Write(w, apperror.ErrInvalid)
+		httperror.Write(w, ErrInvalidUserId)
 		return
 	}
 

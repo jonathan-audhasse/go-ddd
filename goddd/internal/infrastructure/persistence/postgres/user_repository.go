@@ -44,74 +44,6 @@ func getQueries(ctx context.Context, pool *pgxpool.Pool) *sqlcgen.Queries {
 	return sqlcgen.New(pool)
 }
 
-// FindByID retrieve a user by its Id
-func (r *userRepository) FindByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
-	logger := log.Ctx(ctx).With().Str("id", id.String()).Logger()
-
-	logger.Debug().Msg("retrieving user by id...")
-
-	// retrieve queries
-	q := getQueries(ctx, r.pool)
-
-	row, err := q.GetUserByID(ctx, ToPgUUID(id))
-	if err != nil && err.Error() == noRowErrMessage {
-		logger.Err(err).Msg("user not found")
-		return nil, repository.ErrUserNotFound
-	}
-	if err != nil {
-		logger.Err(err).Msg("failed to retrieve user by id")
-		return nil, repository.ErrFailedToFindUserById
-	}
-
-	res := toDomain(row)
-
-	logger.Debug().Msg("user found")
-	return &res, nil
-}
-
-// FindPaged list users from a page pointed by a cursor.
-// It returns a limit of user and the next cursor for the following queries
-func (r *userRepository) FindPaged(ctx context.Context, page repository.Page) (repository.PagedResult, error) {
-
-	logger := log.Ctx(ctx).With().
-		Str("cursor", page.Cursor.String()).
-		Int("limit", page.Limit).
-		Logger()
-
-	logger.Debug().Msg("listing users...")
-
-	// retrieve queries
-	q := getQueries(ctx, r.pool)
-
-	rows, err := q.ListUsersPaged(ctx, &sqlcgen.ListUsersPagedParams{
-		Column1: ToPgUUID(page.Cursor),
-		Limit:   int32(page.Limit) + 1, // fetch one extra to detect whether a next page exists
-	})
-	if err != nil {
-		logger.Err(err).Msg("failed to list users")
-		return repository.PagedResult{}, repository.ErrFailedToListUsers
-	}
-
-	hasNext := len(rows) > page.Limit
-	if hasNext {
-		rows = rows[:page.Limit]
-	}
-
-	res := repository.PagedResult{
-		Users: make([]models.User, len(rows)),
-	}
-	for i, row := range rows {
-		res.Users[i] = toDomain(row)
-	}
-	if hasNext {
-		last := res.Users[len(res.Users)-1].ID
-		res.NextCursor = &last
-	}
-
-	logger.Debug().Int("total", len(res.Users)).Msg("users found")
-	return res, nil
-}
-
 // Create inserts a new user to repository
 func (r *userRepository) Create(ctx context.Context, newUser models.NewUser) (models.User, error) {
 	logger := log.Ctx(ctx).With().Any("newUser", newUser).Logger()
@@ -183,6 +115,75 @@ func (*userRepository) BulkCreates(ctx context.Context, users []models.NewUser) 
 	logger.Debug().Int64("count", count).Msg("bulk insert succeeded")
 
 	return count, nil
+}
+
+// FindByID retrieve a user by its Id
+func (r *userRepository) FindByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
+	logger := log.Ctx(ctx).With().Str("id", id.String()).Logger()
+
+	logger.Debug().Msg("retrieving user by id...")
+
+	// retrieve queries
+	q := getQueries(ctx, r.pool)
+
+	row, err := q.GetUserByID(ctx, ToPgUUID(id))
+	if err != nil && err.Error() == noRowErrMessage {
+		logger.Err(err).Msg("user not found")
+		return nil, repository.ErrUserNotFound
+	}
+	if err != nil {
+		logger.Err(err).Msg("failed to retrieve user by id")
+		return nil, repository.ErrFailedToFindUserById
+	}
+
+	res := toDomain(row)
+
+	logger.Debug().Msg("user found")
+	return &res, nil
+}
+
+// FindPaged list users from a page pointed by a cursor.
+// It returns a limit of user and the next cursor for the following queries
+func (r *userRepository) FindPaged(ctx context.Context, page repository.Page) (repository.PagedResult, error) {
+
+	limit := int(page.Limit)
+	logger := log.Ctx(ctx).With().
+		Str("cursor", page.Cursor.String()).
+		Int("limit", limit).
+		Logger()
+
+	logger.Debug().Msg("listing users...")
+
+	// retrieve queries
+	q := getQueries(ctx, r.pool)
+
+	rows, err := q.ListUsersPaged(ctx, &sqlcgen.ListUsersPagedParams{
+		Column1: ToPgUUID(page.Cursor),
+		Limit:   int32(page.Limit) + 1, // fetch one extra to detect whether a next page exists
+	})
+	if err != nil {
+		logger.Err(err).Msg("failed to list users")
+		return repository.PagedResult{}, repository.ErrFailedToListUsers
+	}
+
+	hasNext := len(rows) > limit
+	if hasNext {
+		rows = rows[:page.Limit]
+	}
+
+	res := repository.PagedResult{
+		Users: make([]models.User, len(rows)),
+	}
+	for i, row := range rows {
+		res.Users[i] = toDomain(row)
+	}
+	if hasNext {
+		last := res.Users[len(res.Users)-1].ID
+		res.NextCursor = &last
+	}
+
+	logger.Debug().Int("total", len(res.Users)).Msg("users found")
+	return res, nil
 }
 
 // Update updates the user data

@@ -173,3 +173,71 @@ func (_c *MockUserService_GetUser_Call) RunAndReturn(run func(context1 context.C
 	_c.Call.Return(run)
 	return _c
 }
+
+// ListUsers provides a mock function for the type MockUserService
+func (_mock *MockUserService) ListUsers(context1 context.Context, listUsersRequest dto.ListUsersRequest) (*dto.ListUsersResponse, error) {
+	ret := _mock.Called(context1, listUsersRequest)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListUsers")
+	}
+
+	var r0 *dto.ListUsersResponse
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, dto.ListUsersRequest) (*dto.ListUsersResponse, error)); ok {
+		return returnFunc(context1, listUsersRequest)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, dto.ListUsersRequest) *dto.ListUsersResponse); ok {
+		r0 = returnFunc(context1, listUsersRequest)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*dto.ListUsersResponse)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, dto.ListUsersRequest) error); ok {
+		r1 = returnFunc(context1, listUsersRequest)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockUserService_ListUsers_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListUsers'
+type MockUserService_ListUsers_Call struct {
+	*mock.Call
+}
+
+// ListUsers is a helper method to define mock.On call
+//   - context1 context.Context
+//   - listUsersRequest dto.ListUsersRequest
+func (_e *MockUserService_Expecter) ListUsers(context1 interface{}, listUsersRequest interface{}) *MockUserService_ListUsers_Call {
+	return &MockUserService_ListUsers_Call{Call: _e.mock.On("ListUsers", context1, listUsersRequest)}
+}
+
+func (_c *MockUserService_ListUsers_Call) Run(run func(context1 context.Context, listUsersRequest dto.ListUsersRequest)) *MockUserService_ListUsers_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 dto.ListUsersRequest
+		if args[1] != nil {
+			arg1 = args[1].(dto.ListUsersRequest)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockUserService_ListUsers_Call) Return(listUsersResponse *dto.ListUsersResponse, err error) *MockUserService_ListUsers_Call {
+	_c.Call.Return(listUsersResponse, err)
+	return _c
+}
+
+func (_c *MockUserService_ListUsers_Call) RunAndReturn(run func(context1 context.Context, listUsersRequest dto.ListUsersRequest) (*dto.ListUsersResponse, error)) *MockUserService_ListUsers_Call {
+	_c.Call.Return(run)
+	return _c
+}

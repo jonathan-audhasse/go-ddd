@@ -22,7 +22,7 @@ var (
 // Limit caps the number of rows returned (max 100).
 // Cursor is the ID of the last item seen — omit on the first page.
 type Page struct {
-	Limit  int
+	Limit  uint
 	Cursor uuid.UUID // zero value = first page
 }
 

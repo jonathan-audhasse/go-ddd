@@ -121,7 +121,7 @@ func TestUserHandler_GetUser_FailedToParseId(t *testing.T) {
 	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &res))
 
 	assert.Equal(t, "INVALID_INPUT", res["code"])
-	assert.Equal(t, "invalid input", res["message"])
+	assert.Equal(t, handler.ErrInvalidUserId.Error(), res["message"])
 
 	svc.AssertExpectations(t)
 }
