@@ -41,22 +41,24 @@ func (_m *MockUserRepository) EXPECT() *MockUserRepository_Expecter {
 }
 
 // BulkCreates provides a mock function for the type MockUserRepository
-func (_mock *MockUserRepository) BulkCreates(context1 context.Context, newUsers []models.NewUser) (int64, error) {
+func (_mock *MockUserRepository) BulkCreates(context1 context.Context, newUsers []models.NewUser) ([]models.User, error) {
 	ret := _mock.Called(context1, newUsers)
 
 	if len(ret) == 0 {
 		panic("no return value specified for BulkCreates")
 	}
 
-	var r0 int64
+	var r0 []models.User
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, []models.NewUser) (int64, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []models.NewUser) ([]models.User, error)); ok {
 		return returnFunc(context1, newUsers)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, []models.NewUser) int64); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []models.NewUser) []models.User); ok {
 		r0 = returnFunc(context1, newUsers)
 	} else {
-		r0 = ret.Get(0).(int64)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]models.User)
+		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, []models.NewUser) error); ok {
 		r1 = returnFunc(context1, newUsers)
@@ -96,12 +98,12 @@ func (_c *MockUserRepository_BulkCreates_Call) Run(run func(context1 context.Con
 	return _c
 }
 
-func (_c *MockUserRepository_BulkCreates_Call) Return(n int64, err error) *MockUserRepository_BulkCreates_Call {
-	_c.Call.Return(n, err)
+func (_c *MockUserRepository_BulkCreates_Call) Return(users []models.User, err error) *MockUserRepository_BulkCreates_Call {
+	_c.Call.Return(users, err)
 	return _c
 }
 
-func (_c *MockUserRepository_BulkCreates_Call) RunAndReturn(run func(context1 context.Context, newUsers []models.NewUser) (int64, error)) *MockUserRepository_BulkCreates_Call {
+func (_c *MockUserRepository_BulkCreates_Call) RunAndReturn(run func(context1 context.Context, newUsers []models.NewUser) ([]models.User, error)) *MockUserRepository_BulkCreates_Call {
 	_c.Call.Return(run)
 	return _c
 }

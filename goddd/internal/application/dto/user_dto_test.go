@@ -1,8 +1,8 @@
 package dto_test
 
 import (
+	"fmt"
 	"goddd/internal/application/dto"
-	"goddd/internal/domain/models"
 	"goddd/internal/domain/repository"
 	"testing"
 
@@ -13,16 +13,66 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCreateUserRequest_ToNewUser(t *testing.T) {
-	req := dto.CreateUserRequest{
-		Username: gofakeit.Username(),
-		Email:    gofakeit.Email(),
+func TestCreateUserRequest_Validate(t *testing.T) {
+
+	testCases := []struct {
+		name   string
+		req    dto.CreateUserRequest
+		expErr error
+	}{
+		{
+			name:   "missing username",
+			req:    dto.CreateUserRequest{},
+			expErr: dto.ErrMissingUsername,
+		},
+		{
+			name:   "invalid email",
+			req:    dto.CreateUserRequest{Username: "john", Email: "invalid-mail"},
+			expErr: fmt.Errorf("%w: email='invalid-mail'", dto.ErrInvalidEmail),
+		},
+		{
+			name:   "succeed",
+			req:    dto.CreateUserRequest{Username: "john", Email: "john@test.com"},
+			expErr: nil,
+		},
 	}
-	expRes := models.NewUser{
-		Username: req.Username,
-		Email:    req.Email,
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.expErr, tc.req.Validate())
+		})
 	}
-	assert.Equal(t, expRes, req.ToNewUser())
+}
+
+func TestCreateUsersRequest_Validate(t *testing.T) {
+
+	testCases := []struct {
+		name   string
+		req    dto.CreateUsersRequest
+		expErr error
+	}{
+		{
+			name:   "missing username",
+			req:    []dto.CreateUserRequest{{}},
+			expErr: dto.ErrMissingUsername,
+		},
+		{
+			name:   "invalid email",
+			req:    []dto.CreateUserRequest{{Username: "john", Email: "invalid-mail"}},
+			expErr: fmt.Errorf("%w: email='invalid-mail'", dto.ErrInvalidEmail),
+		},
+		{
+			name:   "succeed",
+			req:    []dto.CreateUserRequest{{Username: "john", Email: "john@test.com"}},
+			expErr: nil,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.expErr, tc.req.Validate())
+		})
+	}
 }
 
 func TestListUsersRequest_ToNewUser(t *testing.T) {
@@ -63,5 +113,4 @@ func TestListUsersRequest_ToNewUser(t *testing.T) {
 			}
 		})
 	}
-
 }

@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog/log"
@@ -17,11 +16,6 @@ import (
 )
 
 const usersEmailKey = "users_email_key"
-
-var (
-	ErrFailedToBulkInsert = errors.New("failed to bulk insert users")
-	ErrFailedToRetrieveTx = errors.New("failed to retrieve transaction")
-)
 
 // userRepository implements domain/user.Repository using sqlc-generated queries.
 type userRepository struct {
@@ -79,42 +73,56 @@ func (r *userRepository) Create(ctx context.Context, newUser models.NewUser) (mo
 }
 
 // BulkCreates bulk insert a list of users in the repository
-func (*userRepository) BulkCreates(ctx context.Context, users []models.NewUser) (int64, error) {
+func (r *userRepository) BulkCreates(ctx context.Context, users []models.NewUser) ([]models.User, error) {
 	logger := log.Ctx(ctx).With().Int("total", len(users)).Logger()
 
 	logger.Debug().Msg("bulk insert user in repo...")
 
 	if len(users) == 0 {
-		return 0, nil
+		return []models.User{}, nil
 	}
 
-	// retrieve transaction
-	tx, ok := transaction.GetTx(ctx)
-	if !ok {
-		return 0, ErrFailedToRetrieveTx
+	// retrieve queries
+	q := getQueries(ctx, r.pool)
+
+	// unnest takes parallel column arrays, not rows
+	emails := make([]string, len(users))
+	usernames := make([]string, len(users))
+	for i, user := range users {
+		emails[i] = user.Email
+		usernames[i] = user.Username
 	}
 
-	// append rows
-	rows := make([][]any, 0, len(users))
-	for _, u := range users {
-		rows = append(rows, []any{u.Email, u.Username})
-	}
-
-	// bulk insert
-	count, err := tx.CopyFrom(
-		ctx,
-		pgx.Identifier{"users"},
-		[]string{"email", "username"},
-		pgx.CopyFromRows(rows),
-	)
+	rows, err := q.BulkCreateUsers(ctx, &sqlcgen.BulkCreateUsersParams{
+		Emails:    emails,
+		Usernames: usernames,
+	})
 	if err != nil {
 		logger.Err(err).Msg("failed to insert users in repo")
-		return 0, ErrFailedToBulkInsert
+
+		var pqErr *pgconn.PgError
+		if errors.As(err, &pqErr) {
+			// email already exists
+			if pqErr.Code == uniqueConstraintViolation && pqErr.ConstraintName == usersEmailKey {
+				return []models.User{}, repository.ErrUserEmailAlreadyExist
+			}
+			// email already exists
+			if pqErr.Code == uniqueConstraintViolation && pqErr.ConstraintName == usersEmailKey {
+				return []models.User{}, repository.ErrUserEmailAlreadyExist
+			}
+		}
+
+		return []models.User{}, repository.ErrFailedToBulkCreateUsers
 	}
 
-	logger.Debug().Int64("count", count).Msg("bulk insert succeeded")
+	res := make([]models.User, len(rows))
+	for i, row := range rows {
+		res[i] = toDomain(row)
+	}
 
-	return count, nil
+	logger.Debug().Int("count", len(res)).Msg("bulk insert succeeded")
+
+	return res, nil
 }
 
 // FindByID retrieve a user by its Id

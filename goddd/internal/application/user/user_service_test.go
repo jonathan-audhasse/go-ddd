@@ -24,12 +24,10 @@ func TestUserService_CreateNewUser(t *testing.T) {
 
 	tm := mocktm.NewMockTransactionManager(t)
 
-	mockErr := gofakeit.Error()
-	expUser := models.User{}
-	req := dto.CreateUserRequest{}
+	mockRes := models.User{}
+	req := dto.CreateUserRequest{Username: gofakeit.Username(), Email: gofakeit.Email()}
 
-	gofakeit.Struct(&expUser)
-	gofakeit.Struct(&req)
+	gofakeit.Struct(&mockRes)
 
 	tm.EXPECT().
 		Do(ctx, mock.Anything).
@@ -39,21 +37,29 @@ func TestUserService_CreateNewUser(t *testing.T) {
 
 	testCases := []struct {
 		name   string
+		req    dto.CreateUserRequest
 		create func(context.Context, models.NewUser) (models.User, error)
 		expErr error
 	}{
 		{
+			name:   "invalid request",
+			req:    dto.CreateUserRequest{},
+			expErr: dto.ErrMissingUsername,
+		},
+		{
 			name: "failed to insert into repository",
+			req:  dto.CreateUserRequest{Username: gofakeit.Username(), Email: gofakeit.Email()},
 			create: func(context.Context, models.NewUser) (models.User, error) {
-				return models.User{}, mockErr
+				return models.User{}, gofakeit.Error()
 			},
 			expErr: apperror.ErrInternal,
 		},
 		{
 			name: "succeed to create new user",
+			req:  req,
 			create: func(_ context.Context, u models.NewUser) (models.User, error) {
 				require.Equal(t, models.NewUser{Email: req.Email, Username: req.Username}, u)
-				return expUser, nil
+				return mockRes, nil
 			},
 			expErr: nil,
 		},
@@ -61,18 +67,109 @@ func TestUserService_CreateNewUser(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			// set mock behavior
 			repo := mockrepo.NewMockUserRepository(t)
-			repo.EXPECT().Create(ctx, mock.AnythingOfType("models.NewUser")).RunAndReturn(tc.create)
+			if tc.create != nil {
+				// mock transaction
+				tm.EXPECT().
+					Do(ctx, mock.Anything).
+					RunAndReturn(func(ctx context.Context, fn func(ctx context.Context) error) error {
+						return fn(ctx)
+					})
+				// mock repo function
+				repo.EXPECT().Create(ctx, mock.AnythingOfType("models.NewUser")).RunAndReturn(tc.create)
+			}
 			srv := user.NewUserService(repo, tm)
 
-			res, err := srv.CreateNewUser(ctx, req)
+			res, err := srv.CreateNewUser(ctx, tc.req)
 			require.Equal(t, tc.expErr, err)
 
 			if tc.expErr != nil {
 				return
 			}
 
-			assert.Equal(t, expUser, res)
+			assert.Equal(t, mockRes, res)
+		})
+	}
+}
+
+func TestUserService_CreateNewUsers(t *testing.T) {
+	ctx := context.Background()
+
+	tm := mocktm.NewMockTransactionManager(t)
+
+	req := dto.CreateUsersRequest{
+		{Username: gofakeit.Username(), Email: gofakeit.Email()},
+		{Username: gofakeit.Username(), Email: gofakeit.Email()},
+	}
+	mockRes := make([]models.User, 2)
+
+	gofakeit.Struct(&mockRes[0])
+	gofakeit.Struct(&mockRes[1])
+
+	testCases := []struct {
+		name        string
+		req         dto.CreateUsersRequest
+		bulkCreates func(context.Context, []models.NewUser) ([]models.User, error)
+		expErr      error
+		expRes      []models.User
+	}{
+		{
+			name:   "empty list",
+			req:    dto.CreateUsersRequest{},
+			expRes: []models.User{},
+		},
+		{
+			name:   "invalid request",
+			req:    dto.CreateUsersRequest{{}},
+			expErr: dto.ErrMissingUsername,
+		},
+		{
+			name: "failed to insert into repository",
+			req:  req,
+			bulkCreates: func(context.Context, []models.NewUser) ([]models.User, error) {
+				return []models.User{}, gofakeit.Error()
+			},
+			expErr: apperror.ErrInternal,
+		},
+		{
+			name: "succeed to create new users",
+			req:  req,
+			bulkCreates: func(_ context.Context, users []models.NewUser) ([]models.User, error) {
+				require.Len(t, users, 2)
+				require.Equal(t, models.NewUser{Email: req[0].Email, Username: req[0].Username}, users[0])
+				require.Equal(t, models.NewUser{Email: req[1].Email, Username: req[1].Username}, users[1])
+				return mockRes, nil
+			},
+			expErr: nil,
+			expRes: mockRes,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// set mock behavior
+			repo := mockrepo.NewMockUserRepository(t)
+			if tc.bulkCreates != nil {
+				// mock transaction
+				tm.EXPECT().
+					Do(ctx, mock.Anything).
+					RunAndReturn(func(ctx context.Context, fn func(ctx context.Context) error) error {
+						return fn(ctx)
+					})
+				// mock repo function
+				repo.EXPECT().BulkCreates(ctx, mock.AnythingOfType("[]models.NewUser")).RunAndReturn(tc.bulkCreates)
+			}
+			srv := user.NewUserService(repo, tm)
+
+			res, err := srv.CreateNewUsers(ctx, tc.req)
+			require.Equal(t, tc.expErr, err)
+
+			if tc.expErr != nil {
+				return
+			}
+
+			assert.Equal(t, tc.expRes, res)
 		})
 	}
 }

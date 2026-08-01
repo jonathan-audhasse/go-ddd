@@ -15,9 +15,11 @@ import (
 
 // UserService user service interface
 type UserService interface {
-	// CreateNewUser creates a new user
+	// CreateNewUser creates a new user.
 	CreateNewUser(context.Context, dto.CreateUserRequest) (models.User, error)
-	// GetUser finds a user by its id
+	// CreateNewUsers creates new users in a batch mode.
+	CreateNewUsers(context.Context, dto.CreateUsersRequest) ([]models.User, error)
+	// GetUser finds a user by its id.
 	GetUser(context.Context, uuid.UUID) (*models.User, error)
 	// ListUsers returns a list of users from a given cursor.
 	//
@@ -42,12 +44,23 @@ func (s *service) CreateNewUser(ctx context.Context, req dto.CreateUserRequest) 
 
 	logger.Info().Msg("creating a new user...")
 
+	// validate input
+	if err := req.Validate(); err != nil {
+		return models.User{}, err
+	}
+
+	// parse request to model
+	newUser := models.NewUser{
+		Username: req.Username,
+		Email:    req.Email,
+	}
+
 	var res models.User
 	err := s.tm.Do(ctx, func(ctx context.Context) error {
+
 		// create a new user in repo
-		user, err := s.repo.Create(ctx, req.ToNewUser())
+		user, err := s.repo.Create(ctx, newUser)
 		if err != nil {
-			log.Err(err).Msg("failed to create a new user")
 			return err
 		}
 		res = user
@@ -62,6 +75,49 @@ func (s *service) CreateNewUser(ctx context.Context, req dto.CreateUserRequest) 
 	return res, nil
 }
 
+// CreateNewUsers creates new users in a batch mode
+func (s *service) CreateNewUsers(ctx context.Context, req dto.CreateUsersRequest) ([]models.User, error) {
+	logger := log.Ctx(ctx).With().Any("newUsers", req).Logger()
+
+	logger.Info().Msg("creating new user...")
+
+	if len(req) == 0 {
+		// nothing to do
+		logger.Info().Msg("nothing to add")
+		return []models.User{}, nil
+	}
+
+	// validate input
+	if err := req.Validate(); err != nil {
+		return []models.User{}, err
+	}
+
+	// parse request to model
+	newUsers := make([]models.NewUser, len(req))
+	for i, newUser := range req {
+		newUsers[i] = models.NewUser{Email: newUser.Email, Username: newUser.Username}
+	}
+
+	var res []models.User
+	err := s.tm.Do(ctx, func(ctx context.Context) error {
+
+		// create new users in batch mode
+		users, err := s.repo.BulkCreates(ctx, newUsers)
+		if err != nil {
+			return err
+		}
+		res = users
+		return nil
+	})
+	if err != nil {
+		return []models.User{}, apperror.ToAppError(err)
+	}
+
+	logger.Info().Int("total", len(res)).Msg("new users created")
+
+	return res, nil
+}
+
 // GetUser finds a user by its id
 func (s *service) GetUser(ctx context.Context, userId uuid.UUID) (*models.User, error) {
 	logger := log.Ctx(ctx).With().Str("user_id", userId.String()).Logger()
@@ -71,7 +127,6 @@ func (s *service) GetUser(ctx context.Context, userId uuid.UUID) (*models.User, 
 	// retrieve from repo
 	user, err := s.repo.FindByID(ctx, userId)
 	if err != nil {
-		log.Err(err).Msg("failed to retrieve a new user")
 		return nil, apperror.ToAppError(err)
 	}
 
@@ -97,7 +152,6 @@ func (s *service) ListUsers(ctx context.Context, req dto.ListUsersRequest) (*dto
 	// retrieve  users from repo
 	pageRes, err := s.repo.FindPaged(ctx, page)
 	if err != nil {
-		log.Err(err).Msg("failed to list users from repo")
 		return nil, apperror.ToAppError(err)
 	}
 

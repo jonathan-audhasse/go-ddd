@@ -11,6 +11,7 @@ import (
 )
 
 type Querier interface {
+	BulkCreateUsers(ctx context.Context, arg *BulkCreateUsersParams) ([]*User, error)
 	CountUsers(ctx context.Context) (int64, error)
 	CreateUser(ctx context.Context, arg *CreateUserParams) (*User, error)
 	DeleteUser(ctx context.Context, id pgtype.UUID) error

@@ -9,13 +9,14 @@ import (
 )
 
 var (
-	ErrUserNotFound          = errors.New("user not found")
-	ErrFailedToFindUserById  = errors.New("failed to find user by its ID")
-	ErrFailedToCreateUser    = errors.New("failed to create a user")
-	ErrUserEmailAlreadyExist = errors.New("failed to create a user: the email already exists")
-	ErrFailedToUpdateUser    = errors.New("failed to update user")
-	ErrFailedToDeleteUser    = errors.New("failed to delete user")
-	ErrFailedToListUsers     = errors.New("failed to list users")
+	ErrFailedToBulkCreateUsers = errors.New("failed to bulk create users")
+	ErrFailedToCreateUser      = errors.New("failed to create a user")
+	ErrFailedToDeleteUser      = errors.New("failed to delete user")
+	ErrFailedToFindUserById    = errors.New("failed to find user by its ID")
+	ErrFailedToListUsers       = errors.New("failed to list users")
+	ErrFailedToUpdateUser      = errors.New("failed to update user")
+	ErrUserEmailAlreadyExist   = errors.New("failed to create a user: the email already exists")
+	ErrUserNotFound            = errors.New("user not found")
 )
 
 // Page carries cursor-based pagination parameters.
@@ -38,7 +39,7 @@ type UserRepository interface {
 	FindByID(context.Context, uuid.UUID) (*models.User, error)
 	FindPaged(context.Context, Page) (PagedResult, error)
 	Create(context.Context, models.NewUser) (models.User, error)
-	BulkCreates(context.Context, []models.NewUser) (int64, error)
+	BulkCreates(context.Context, []models.NewUser) ([]models.User, error)
 	Update(context.Context, models.User) (models.User, error)
 	Delete(context.Context, uuid.UUID) error
 }

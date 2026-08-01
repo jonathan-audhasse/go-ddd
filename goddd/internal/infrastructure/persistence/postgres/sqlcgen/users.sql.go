@@ -11,6 +11,43 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const bulkCreateUsers = `-- name: BulkCreateUsers :many
+INSERT INTO users (email, username)
+SELECT unnest($1::text[]), unnest($2::text[])
+RETURNING id, email, username, created_at, updated_at
+`
+
+type BulkCreateUsersParams struct {
+	Emails    []string
+	Usernames []string
+}
+
+func (q *Queries) BulkCreateUsers(ctx context.Context, arg *BulkCreateUsersParams) ([]*User, error) {
+	rows, err := q.db.Query(ctx, bulkCreateUsers, arg.Emails, arg.Usernames)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.Email,
+			&i.Username,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const countUsers = `-- name: CountUsers :one
 SELECT COUNT(*) FROM users
 `

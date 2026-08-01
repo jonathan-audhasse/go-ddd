@@ -37,7 +37,9 @@ func NewRouter(services *application.Services) http.Handler {
 
 	r.Route("/users", func(r chi.Router) {
 		r.Post("/", userHandler.CreateUser)
+		r.Post("/bulk", userHandler.CreateUsers)
 		r.Get("/{id}", userHandler.GetUser)
+		r.Get("/", userHandler.ListUsers)
 	})
 
 	return r

@@ -262,9 +262,9 @@ func TestUserRepository_BulkCreates(t *testing.T) {
 	}
 
 	// add users
-	count, err := repo.BulkCreates(ctx, users)
+	createdUsers, err := repo.BulkCreates(ctx, users)
 	require.NoError(t, err)
-	require.Equal(t, int64(3), count)
+	require.Len(t, createdUsers, len(users))
 
 	// assert users has been added
 	total, err = q.CountUsers(ctx)

@@ -21,7 +21,13 @@ SELECT COUNT(*) FROM users;
 INSERT INTO users (email, username) 
 VALUES ($1, $2)
 RETURNING *;
- 
+
+-- name: BulkCreateUsers :many
+INSERT INTO users (email, username)
+SELECT unnest(@emails::text[]), unnest(@usernames::text[])
+RETURNING *;
+
+
 -- name: UpdateUser :one
 UPDATE users
 SET

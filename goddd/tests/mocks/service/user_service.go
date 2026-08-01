@@ -106,6 +106,74 @@ func (_c *MockUserService_CreateNewUser_Call) RunAndReturn(run func(context1 con
 	return _c
 }
 
+// CreateNewUsers provides a mock function for the type MockUserService
+func (_mock *MockUserService) CreateNewUsers(context1 context.Context, createUsersRequest dto.CreateUsersRequest) ([]models.User, error) {
+	ret := _mock.Called(context1, createUsersRequest)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CreateNewUsers")
+	}
+
+	var r0 []models.User
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, dto.CreateUsersRequest) ([]models.User, error)); ok {
+		return returnFunc(context1, createUsersRequest)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, dto.CreateUsersRequest) []models.User); ok {
+		r0 = returnFunc(context1, createUsersRequest)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]models.User)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, dto.CreateUsersRequest) error); ok {
+		r1 = returnFunc(context1, createUsersRequest)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockUserService_CreateNewUsers_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateNewUsers'
+type MockUserService_CreateNewUsers_Call struct {
+	*mock.Call
+}
+
+// CreateNewUsers is a helper method to define mock.On call
+//   - context1 context.Context
+//   - createUsersRequest dto.CreateUsersRequest
+func (_e *MockUserService_Expecter) CreateNewUsers(context1 interface{}, createUsersRequest interface{}) *MockUserService_CreateNewUsers_Call {
+	return &MockUserService_CreateNewUsers_Call{Call: _e.mock.On("CreateNewUsers", context1, createUsersRequest)}
+}
+
+func (_c *MockUserService_CreateNewUsers_Call) Run(run func(context1 context.Context, createUsersRequest dto.CreateUsersRequest)) *MockUserService_CreateNewUsers_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 dto.CreateUsersRequest
+		if args[1] != nil {
+			arg1 = args[1].(dto.CreateUsersRequest)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockUserService_CreateNewUsers_Call) Return(users []models.User, err error) *MockUserService_CreateNewUsers_Call {
+	_c.Call.Return(users, err)
+	return _c
+}
+
+func (_c *MockUserService_CreateNewUsers_Call) RunAndReturn(run func(context1 context.Context, createUsersRequest dto.CreateUsersRequest) ([]models.User, error)) *MockUserService_CreateNewUsers_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetUser provides a mock function for the type MockUserService
 func (_mock *MockUserService) GetUser(context1 context.Context, uUID uuid.UUID) (*models.User, error) {
 	ret := _mock.Called(context1, uUID)

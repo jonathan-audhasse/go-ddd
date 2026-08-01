@@ -5,31 +5,66 @@ import (
 	"goddd/internal/application/apperror"
 	"goddd/internal/domain/models"
 	"goddd/internal/domain/repository"
+	"net/mail"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 )
 
-var ErrInvalidCursor = fmt.Errorf("%w: cursor Id must be of type uuid", apperror.ErrInvalid)
+var (
+	ErrMissingUsername = fmt.Errorf("%w: username is required", apperror.ErrInvalid)
+	ErrInvalidEmail    = fmt.Errorf("%w: email is not a valid address", apperror.ErrInvalid)
+	ErrInvalidCursor   = fmt.Errorf("%w: cursor Id must be of type uuid", apperror.ErrInvalid)
+)
 
 // CreateUserRequest DTO for user creation
 type CreateUserRequest struct {
 	Username string `json:"username" binding:"required"`
-	Email    string `json:"email"`
+	Email    string `json:"email" binding:"required"`
 }
 
-// ToNewUser parses the new user from DTO to models
-func (dto CreateUserRequest) ToNewUser() models.NewUser {
-	return models.NewUser{
-		Username: dto.Username,
-		Email:    dto.Email,
-	}
-}
+type CreateUsersRequest []CreateUserRequest
 
 // ListUsersRequest DTO to list users from DB
 type ListUsersRequest struct {
 	Limit  uint    `json:"limit"`
 	Cursor *string `json:"cursor"`
+}
+
+// ListUsersResponse is the paginated envelope returned by GET /users.
+type ListUsersResponse struct {
+	Users      []models.User `json:"users"`
+	Limit      uint          `json:"limit"`
+	NextCursor *string       `json:"next_cursor,omitempty"` // null on last page
+}
+
+// Validate checks the request invariants before it reaches the domain.
+func (dto CreateUserRequest) Validate() error {
+	if strings.TrimSpace(dto.Username) == "" {
+		return ErrMissingUsername
+	}
+
+	if _, err := mail.ParseAddress(dto.Email); err != nil {
+		return fmt.Errorf("%w: email='%s'", ErrInvalidEmail, dto.Email)
+	}
+
+	return nil
+}
+
+// Validate checks the request invariants before it reaches the domain.
+func (dto CreateUsersRequest) Validate() error {
+	for _, req := range dto {
+		if strings.TrimSpace(req.Username) == "" {
+			return ErrMissingUsername
+		}
+
+		if _, err := mail.ParseAddress(req.Email); err != nil {
+			return fmt.Errorf("%w: email='%s'", ErrInvalidEmail, req.Email)
+		}
+	}
+
+	return nil
 }
 
 // ToNewUser parses the list request from DTO to repository paged
@@ -53,11 +88,4 @@ func (dto ListUsersRequest) ToPage() (repository.Page, error) {
 	res.Cursor = cursor
 
 	return res, nil
-}
-
-// ListUsersResponse is the paginated envelope returned by GET /users.
-type ListUsersResponse struct {
-	Users      []models.User `json:"users"`
-	Limit      uint          `json:"limit"`
-	NextCursor *string       `json:"next_cursor"` // null on last page
 }

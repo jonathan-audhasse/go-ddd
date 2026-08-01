@@ -40,10 +40,10 @@ func TestWrite(t *testing.T) {
 			expErrCode:    "SERVICE_UNAVAILABLE",
 		},
 		{
-			name:          "apperror.ErrUnprocessable",
-			err:           apperror.ErrUnprocessable,
-			expStatusCode: http.StatusUnprocessableEntity,
-			expErrCode:    "UNPROCESSABLE_ENTITY",
+			name:          "apperror.ErrConflict",
+			err:           apperror.ErrConflict,
+			expStatusCode: http.StatusConflict,
+			expErrCode:    "CONFLICT_ERROR",
 		},
 		{
 			name:          "random error",

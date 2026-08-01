@@ -36,8 +36,8 @@ func statusCode(err error) int {
 	case errors.Is(err, apperror.ErrNotFound):
 		return http.StatusNotFound
 
-	case errors.Is(err, apperror.ErrUnprocessable):
-		return http.StatusUnprocessableEntity
+	case errors.Is(err, apperror.ErrConflict):
+		return http.StatusConflict
 
 	case errors.Is(err, apperror.ErrUnavailable):
 		return http.StatusServiceUnavailable
@@ -56,8 +56,8 @@ func codeFromError(err error) string {
 	case errors.Is(err, apperror.ErrNotFound):
 		return "NOT_FOUND"
 
-	case errors.Is(err, apperror.ErrUnprocessable):
-		return "UNPROCESSABLE_ENTITY"
+	case errors.Is(err, apperror.ErrConflict):
+		return "CONFLICT_ERROR"
 
 	case errors.Is(err, apperror.ErrUnavailable):
 		return "SERVICE_UNAVAILABLE"

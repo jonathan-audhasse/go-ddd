@@ -12,12 +12,12 @@ import (
 
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/google/uuid"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestCreateUser(t *testing.T) {
-
 	req := dto.CreateUserRequest{
 		Username: gofakeit.Username(),
 		Email:    gofakeit.Email(),
@@ -45,7 +45,7 @@ func TestCreateUser(t *testing.T) {
 	assert.Equal(t, req.Email, resPostUser.Email)
 	assert.False(t, resPostUser.CreatedAt.IsZero())
 
-	// try to retrieve test
+	// try to retrieve user
 	res, err = http.Get(fmt.Sprintf("%s/users/%s", e2eBaseUrl, resPostUser.ID.String()))
 	require.Equal(t, http.StatusOK, res.StatusCode)
 	require.NoError(t, err)
@@ -85,4 +85,46 @@ func TestFailedToGetUser(t *testing.T) {
 		"message": "invalid input",
 	}
 	assert.Equal(t, expRes, data)
+}
+
+func TestListUsers(t *testing.T) {
+	req := dto.CreateUserRequest{
+		Username: gofakeit.Username(),
+		Email:    gofakeit.Email(),
+	}
+
+	b, err := json.Marshal(req)
+	require.NoError(t, err)
+
+	reader := bytes.NewReader(b)
+	res, err := http.Post(fmt.Sprintf(e2eBaseUrl+"/users"), "application/json", reader)
+
+	require.NoError(t, err)
+	require.Equal(t, http.StatusCreated, res.StatusCode)
+
+	// assertion
+	resPostData, err := io.ReadAll(res.Body)
+	require.NoError(t, err)
+	require.Equal(t, "application/json", res.Header.Get("Content-Type"))
+
+	var resPostUser models.User
+	require.NoError(t, json.Unmarshal(resPostData, &resPostUser))
+
+	// try to list users
+	res, err = http.Get(fmt.Sprintf("%s/users/?limit=1", e2eBaseUrl))
+	require.Equal(t, http.StatusOK, res.StatusCode)
+	require.NoError(t, err)
+
+	// assertion
+	resGetData, err := io.ReadAll(res.Body)
+	require.NoError(t, err)
+
+	var list dto.ListUsersResponse
+	require.NoError(t, json.Unmarshal(resGetData, &list))
+
+	assert.Equal(t, dto.ListUsersResponse{
+		Users:      []models.User{resPostUser},
+		Limit:      1,
+		NextCursor: lo.ToPtr(resPostUser.ID.String()),
+	}, list)
 }

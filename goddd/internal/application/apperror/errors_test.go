@@ -15,13 +15,14 @@ func TestToAppError(t *testing.T) {
 		err  error
 		res  error
 	}{
-		{name: "repository.ErrUserNotFound", err: repository.ErrUserNotFound, res: apperror.ErrNotFound},
-		{name: "repository.ErrUserEmailAlreadyExist", err: repository.ErrUserEmailAlreadyExist, res: apperror.ErrUnprocessable},
-		{name: "repository.ErrFailedToFindUserById", err: repository.ErrFailedToFindUserById, res: apperror.ErrInternal},
+		{name: "repository.ErrFailedToBulkCreateUsers", err: repository.ErrFailedToBulkCreateUsers, res: apperror.ErrInternal},
 		{name: "repository.ErrFailedToCreateUser", err: repository.ErrFailedToCreateUser, res: apperror.ErrInternal},
-		{name: "repository.ErrFailedToUpdateUser", err: repository.ErrFailedToUpdateUser, res: apperror.ErrInternal},
 		{name: "repository.ErrFailedToDeleteUser", err: repository.ErrFailedToDeleteUser, res: apperror.ErrInternal},
+		{name: "repository.ErrFailedToFindUserById", err: repository.ErrFailedToFindUserById, res: apperror.ErrInternal},
 		{name: "repository.ErrFailedToListUsers", err: repository.ErrFailedToListUsers, res: apperror.ErrInternal},
+		{name: "repository.ErrFailedToUpdateUser", err: repository.ErrFailedToUpdateUser, res: apperror.ErrInternal},
+		{name: "repository.ErrUserEmailAlreadyExist", err: repository.ErrUserEmailAlreadyExist, res: apperror.ErrConflict},
+		{name: "repository.ErrUserNotFound", err: repository.ErrUserNotFound, res: apperror.ErrNotFound},
 		{name: "random error", err: gofakeit.Error(), res: apperror.ErrInternal},
 	}
 
