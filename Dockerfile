@@ -1,13 +1,21 @@
-FROM golang:1.26.2-alpine
+FROM golang:1.26.2-alpine AS builder
 
-RUN apk add zsh git postgresql-client curl make
+WORKDIR /src
 
-WORKDIR /go-ddd
+COPY goddd .
 
-COPY . /go-ddd
+RUN go mod download
 
-# install mockery to generate mock file
-RUN cd src && go install github.com/vektra/mockery/v3@v3.7.0
-RUN cd src && go mod tidy
-#run server
-#CMD go run src/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o /out/api ./cmd/api
+
+RUN CGO_ENABLED=0 GOOS=linux go build -o /out/migrate ./cmd/migrate
+
+
+FROM alpine:3.22
+
+RUN apk add --no-cache ca-certificates
+
+COPY --from=builder /out/api /app/api
+COPY --from=builder /out/migrate /app/migrate
+
+WORKDIR /app

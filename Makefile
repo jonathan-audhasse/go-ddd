@@ -32,26 +32,38 @@ clean:
 #  Mount Services  #
 #------------------#
 
-up: ## Mount services
-	docker compose up -d
+up: ## Mount the container for dev purpose
+	docker compose --profile dev up -d
 
-down: ## Stop and Remove all mounted services
-	docker compose down --remove-orphans
+down: ## Stop and remove all mounted services (for dev)
+	docker compose --profile dev down --remove-orphans
+
+up-e2e: ## Mount services for e2e tests
+	docker compose --profile e2e up -d
+
+down-e2e: ## Stop and remove all mounted services (for e2e)
+	docker compose --profile e2e down --remove-orphans
+
+up-local: ## Mount the api locally
+	docker compose --profile local up -d
+
+down-local: ## Stop and remove all mounted services (local profile)
+	docker compose --profile local down --remove-orphans
 
 #---------#
 #  Tests  #
 #---------#
 
 test: up ## Run tests
-	$(call info, "TODO set tests")
-	docker compose run --rm --no-deps --entrypoint=go server test ./...
+	$(call info, "launching unit test")
+	docker compose run --rm --no-deps --entrypoint=go app test ./...
 
 #-----------#
 #  Helpers  #
 #-----------#
 
 logs: ## Visualize the last 100 docker logs
-	docker compose logs server | tail -100
+	docker compose logs app | tail -100
 
 fmt: ## Formatter
 	go fmt ./...
@@ -64,14 +76,18 @@ lint: ## Run linter (ref: https://golangci-lint.run)
 #-----------------#
 
 zsh-mode: up ## Mount services for local dev
-	docker compose exec server /bin/zsh
+	docker compose exec app /bin/zsh
 
-#---------#
-#  Mocks  #
-#---------#
+#------------#
+#  Generate  #
+#------------#
 
-mock-gen: # Generate mocks
-	cd src && mockery --log-level=""
+# make sure sqlc is installed. refer to: https://docs.sqlc.dev/en/latest/overview/install.html
+sqlc-gen: ## regenerates sqlcgen/ from queries/users.sql
+	cd goddd && sqlc generate
 
-mock-clean: # Clean generated mock files
-	cd src && find -name .mocks -print -exec rm -r {} +
+mock-gen: ## Generate mocks
+	cd goddd && mockery --log-level=""
+
+mock-clean: ## Clean generated mock files
+	cd goddd && find -name mocks -print -exec rm -r {} +

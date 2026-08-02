@@ -1,0 +1,45 @@
+# Top-level defaults config
+template: testify
+# default directory
+dir: 'tests/mocks'
+all: false
+# packages to generate the mock files
+pkgname: '{{.SrcPackageName}}'
+packages:
+
+  # =========================
+  # DOMAIN REPOSITORIES
+  # =========================
+  goddd/internal/domain/repository:
+    config:
+      dir: tests/mocks/repository
+      filename: '{{.InterfaceName | snakecase | lower }}.go'
+      pkgname: repository_mocks
+      all: true
+  
+  # =========================
+  # TRANSACTION LAYER
+  # =========================
+  goddd/internal/application/transaction:
+    config:
+      dir: tests/mocks/transaction
+      filename: 'transaction.go'
+      pkgname: transaction_mocks
+      all: true
+
+  # =========================
+  # APPLICATION SERVICES
+  # =========================
+  goddd/internal/application/user:
+    config:
+      dir: tests/mocks/service
+      filename: '{{.InterfaceName | snakecase | lower }}.go'
+      pkgname: service_mocks
+      all: true
+
+  goddd/internal/application/health:
+    config:
+      dir: tests/mocks/service
+      filename: '{{.InterfaceName | snakecase | lower }}.go'
+      pkgname: service_mocks
+      all: true

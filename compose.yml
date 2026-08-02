@@ -1,28 +1,6 @@
 services:
-  server:
-    build: .
-    working_dir: /go-ddd
-    volumes:
-      - .:/go-ddd:rw
-    env_file: .env
-    ports:
-      - 8000:8000
-    tty: true
-    stop_signal: SIGINT
-    #depends_on:
-      #db:
-      #  condition: service_healthy
-      #db-migration:
-      #  condition: service_completed_successfully
-    entrypoint: tail -f /dev/null
-    # entrypoint: ./db/pgwait.sh
-    # command: go run src/main.go
-    # healthcheck:
-    #     test: curl --fail localhost:8000/health || exit 1
-    #     interval: 10s
-    #     timeout: 3s
-    #     retries: 3
-  
+
+  ## Database
   db:
     image: postgres:18
     environment:
@@ -38,17 +16,91 @@ services:
       timeout: 3s
       retries: 2
 
-  db-migration:
-    image: liquibase/liquibase:4.24
+  #########################################################
+  # Development workspace
+  #########################################################
+
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    working_dir: /go-ddd
+    profiles:
+       - dev
+    volumes:
+      - .:/go-ddd:rw
+    env_file: .env
+    ports:
+      - 8002:8000
+    tty: true
+    stop_signal: SIGINT
+    depends_on:
+      db:
+       condition: service_healthy
+    entrypoint: tail -f /dev/null
+
+  #########################################################
+  # Local API
+  #########################################################
+
+  migrate:
+    build: .
+    command: ["/app/migrate", "-cmd=up"]
+    profiles:
+      - local
+    env_file: .env
     depends_on:
       db:
         condition: service_healthy
-    profiles: 
-      - dev
-    volumes:
-      - ./db/migration/liquibase/:/liquibase/changelog/
-    environment:
-      LIQUIBASE_COMMAND_URL: jdbc:postgresql://$DB_HOST:$DB_PORT/$DB_NAME
-      LIQUIBASE_COMMAND_USERNAME: $DB_USER
-      LIQUIBASE_COMMAND_PASSWORD: $DB_PWD
-    command: --defaults-file=changelog/liquibase.properties --search-path=changelog update
+    restart: "no"
+
+  api:
+    build: .
+    command: ["/app/api"]
+    profiles:
+      - local
+    env_file: .env
+    ports:
+      - 8000:8000
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+        test: curl --fail localhost:8000/health || exit 1
+        interval: 10s
+        timeout: 3s
+        retries: 3
+
+  #########################################################
+  # E2E Environment
+  #########################################################
+
+
+  # Migration for e2e tests
+  migrate-e2e:
+    build: .
+    command: ["/app/migrate", "-cmd=up"]
+    profiles:
+      - e2e
+    env_file: .env.e2e
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  api-e2e:
+    build: . 
+    command: ["/app/api"]
+    profiles:
+      - e2e
+    env_file: .env.e2e
+    ports:
+      - 8001:8000
+    depends_on:
+      migrate-e2e:
+        condition: service_completed_successfully
+    healthcheck:
+        test: curl --fail localhost:8000/health || exit 1
+        interval: 10s
+        timeout: 3s
+        retries: 3

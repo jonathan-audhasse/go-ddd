@@ -1,0 +1,36 @@
+# Requires golangci-lint >= v1.57
+version: "2"
+ 
+linters:
+  enable:
+    - goimports      # flags unformatted code AND unused/missing imports
+    - gofmt          # flags code not formatted by gofmt
+    - unused         # reports unused code (types, funcs, consts)
+    - misspell       # catches common spelling mistakes in comments/strings
+    - govet          # reports suspicious constructs (shadow, printf mismatches…)
+    - errcheck       # ensures errors are not silently discarded
+    - staticcheck    # broad set of static analysis checks
+ 
+linters-settings:
+  goimports:
+    # Separate stdlib, external, and internal imports into distinct blocks
+    local-prefixes: .
+ 
+  gofmt:
+    simplify: true   # applies `gofmt -s` simplifications
+ 
+  govet:
+    enable:
+      - shadow       # catches variables that shadow an outer-scope declaration
+ 
+issues:
+  # Fail on any unused import or formatting issue — no exceptions
+  exclude-use-default: false
+ 
+  exclude-rules:
+    # Allow fmt.Println and similar in main packages (CLI output)
+    - path: "main\\.go"
+      linters: [forbidigo]
+ 
+run:
+  timeout: 3m

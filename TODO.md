@@ -4,7 +4,7 @@ For learning purposes, This is my Todo list
 
 !! 
 Please ask chatGPT to generate a use case where you can practice 
-- grRPC, 
+- grRPC
 - API proto,
 - mircroservice,
 - API gateway (authen with JWT, loadbalancer, keyclock ...)
@@ -15,23 +15,25 @@ Please ask chatGPT to generate a use case where you can practice
 !!
 
 ## Todo
+
 - [x] Handle errors
 - [x] gracefull shutdown
 - [x] PostgresSql
-- [ ] use go-migrate for DB migration
-- [ ] add mockery
+- [x] use go-migrate for DB migration
+- [x] add mockery
 - [ ] Add github actions (tests, release-please)
-- [ ] Add an ORM [gorm](https://github.com/go-gorm/gorm), [sqlc](https://github.com/sqlc-dev/sqlc), [sqlboiler](https://github.com/volatiletech/sqlboiler)
-- [ ] Find a way to populate database (remove inserts from sql script)
+- [ ] Add an ORM with [sqlc](https://github.com/sqlc-dev/sqlc)
 - [ ] Nginx or traefik as reverse proxy and load balancer
 - [ ] Authen system (JWT or basic Authen or OAuth2)
 - [ ] HTTPS
 - [ ] manage users
 - [ ] finish product
 - [ ] complete database schema
+- [ ] [cleanenv](https://pkg.go.dev/github.com/ilyakaznacheev/cleanenv), [viper](https://github.com/spf13/viper), [cobra](https://github.com/spf13/cobra),  
 
 ## Work In progress
-- [ ] Use mock in unit test
+
+- [x] Use mock in unit test
 - [ ] correct FIXMEs
 - [ ] Update doc
 
