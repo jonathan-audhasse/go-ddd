@@ -309,3 +309,69 @@ func (_c *MockUserService_ListUsers_Call) RunAndReturn(run func(context1 context
 	_c.Call.Return(run)
 	return _c
 }
+
+// UpdateUser provides a mock function for the type MockUserService
+func (_mock *MockUserService) UpdateUser(context1 context.Context, updateUserRequest dto.UpdateUserRequest) (models.User, error) {
+	ret := _mock.Called(context1, updateUserRequest)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateUser")
+	}
+
+	var r0 models.User
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, dto.UpdateUserRequest) (models.User, error)); ok {
+		return returnFunc(context1, updateUserRequest)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, dto.UpdateUserRequest) models.User); ok {
+		r0 = returnFunc(context1, updateUserRequest)
+	} else {
+		r0 = ret.Get(0).(models.User)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, dto.UpdateUserRequest) error); ok {
+		r1 = returnFunc(context1, updateUserRequest)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockUserService_UpdateUser_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateUser'
+type MockUserService_UpdateUser_Call struct {
+	*mock.Call
+}
+
+// UpdateUser is a helper method to define mock.On call
+//   - context1 context.Context
+//   - updateUserRequest dto.UpdateUserRequest
+func (_e *MockUserService_Expecter) UpdateUser(context1 interface{}, updateUserRequest interface{}) *MockUserService_UpdateUser_Call {
+	return &MockUserService_UpdateUser_Call{Call: _e.mock.On("UpdateUser", context1, updateUserRequest)}
+}
+
+func (_c *MockUserService_UpdateUser_Call) Run(run func(context1 context.Context, updateUserRequest dto.UpdateUserRequest)) *MockUserService_UpdateUser_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 dto.UpdateUserRequest
+		if args[1] != nil {
+			arg1 = args[1].(dto.UpdateUserRequest)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockUserService_UpdateUser_Call) Return(user models.User, err error) *MockUserService_UpdateUser_Call {
+	_c.Call.Return(user, err)
+	return _c
+}
+
+func (_c *MockUserService_UpdateUser_Call) RunAndReturn(run func(context1 context.Context, updateUserRequest dto.UpdateUserRequest) (models.User, error)) *MockUserService_UpdateUser_Call {
+	_c.Call.Return(run)
+	return _c
+}

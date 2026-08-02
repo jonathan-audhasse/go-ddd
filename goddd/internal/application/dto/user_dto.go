@@ -26,6 +26,13 @@ type CreateUserRequest struct {
 
 type CreateUsersRequest []CreateUserRequest
 
+// UpdateUserRequest DTO for user update
+type UpdateUserRequest struct {
+	Id       uuid.UUID `json:"id"`
+	Username string    `json:"username"`
+	Email    string    `json:"email"`
+}
+
 // ListUsersRequest DTO to list users from DB
 type ListUsersRequest struct {
 	Limit  uint    `json:"limit"`
@@ -37,6 +44,20 @@ type ListUsersResponse struct {
 	Users      []models.User `json:"users"`
 	Limit      uint          `json:"limit"`
 	NextCursor *string       `json:"next_cursor,omitempty"` // null on last page
+}
+
+// Validate checks the request invariants before it reaches the domain.
+func (dto UpdateUserRequest) Validate() error {
+	if dto.Email == "" {
+		// nothing to do
+		return nil
+	}
+
+	if _, err := mail.ParseAddress(dto.Email); err != nil {
+		return fmt.Errorf("%w: email='%s'", ErrInvalidEmail, dto.Email)
+	}
+
+	return nil
 }
 
 // Validate checks the request invariants before it reaches the domain.

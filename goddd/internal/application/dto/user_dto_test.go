@@ -44,6 +44,37 @@ func TestCreateUserRequest_Validate(t *testing.T) {
 	}
 }
 
+func TestUpdateUserRequest_Validate(t *testing.T) {
+
+	testCases := []struct {
+		name   string
+		req    dto.UpdateUserRequest
+		expErr error
+	}{
+		{
+			name:   "no attribute set",
+			req:    dto.UpdateUserRequest{},
+			expErr: nil,
+		},
+		{
+			name:   "invalid email",
+			req:    dto.UpdateUserRequest{Email: "invalid-mail"},
+			expErr: fmt.Errorf("%w: email='invalid-mail'", dto.ErrInvalidEmail),
+		},
+		{
+			name:   "succeed",
+			req:    dto.UpdateUserRequest{Username: "john", Email: "john@test.com"},
+			expErr: nil,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.expErr, tc.req.Validate())
+		})
+	}
+}
+
 func TestCreateUsersRequest_Validate(t *testing.T) {
 
 	testCases := []struct {

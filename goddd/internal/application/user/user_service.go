@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"errors"
 	"goddd/internal/application/apperror"
 	"goddd/internal/application/dto"
 	"goddd/internal/application/transaction"
@@ -15,16 +16,18 @@ import (
 
 // UserService user service interface
 type UserService interface {
-	// CreateNewUser creates a new user.
-	CreateNewUser(context.Context, dto.CreateUserRequest) (models.User, error)
-	// CreateNewUsers creates new users in a batch mode.
-	CreateNewUsers(context.Context, dto.CreateUsersRequest) ([]models.User, error)
 	// GetUser finds a user by its id.
 	GetUser(context.Context, uuid.UUID) (*models.User, error)
 	// ListUsers returns a list of users from a given cursor.
 	//
 	// It return a limited number of users set in the request.
 	ListUsers(context.Context, dto.ListUsersRequest) (*dto.ListUsersResponse, error)
+	// CreateNewUser creates a new user.
+	CreateNewUser(context.Context, dto.CreateUserRequest) (models.User, error)
+	// CreateNewUsers creates new users in a batch mode.
+	CreateNewUsers(context.Context, dto.CreateUsersRequest) ([]models.User, error)
+	// UpdateUser updates user attributes.
+	UpdateUser(context.Context, dto.UpdateUserRequest) (models.User, error)
 }
 
 // service for user's services implementation
@@ -33,9 +36,67 @@ type service struct {
 	tm   transaction.TransactionManager
 }
 
+var (
+	ErrNilUser = errors.New("nil user")
+)
+
 // NewUserService instantiate the UserService object
 func NewUserService(repo repository.UserRepository, tm transaction.TransactionManager) UserService {
 	return &service{repo, tm}
+}
+
+// GetUser finds a user by its id
+func (s *service) GetUser(ctx context.Context, userId uuid.UUID) (*models.User, error) {
+	logger := log.Ctx(ctx).With().Str("user_id", userId.String()).Logger()
+
+	logger.Info().Msg("retrieving a new user...")
+
+	// retrieve from repo
+	user, err := s.repo.FindByID(ctx, userId)
+	if err != nil {
+		return nil, apperror.ToAppError(err)
+	}
+
+	logger.Info().Msg("user found")
+
+	return user, nil
+}
+
+// ListUsers returns a list of users from a given cursor.
+//
+// It return a limited number of users set in the request.
+func (s *service) ListUsers(ctx context.Context, req dto.ListUsersRequest) (*dto.ListUsersResponse, error) {
+	logger := log.Ctx(ctx).With().Any("request", req).Logger()
+
+	logger.Info().Msg("listing user...")
+
+	// parse request to repository page request
+	page, err := req.ToPage()
+	if err != nil {
+		return nil, err
+	}
+
+	// retrieve  users from repo
+	pageRes, err := s.repo.FindPaged(ctx, page)
+	if err != nil {
+		return nil, apperror.ToAppError(err)
+	}
+
+	logger.Info().Msg("users found")
+
+	// set next page result if defined
+	var nextCursor *string
+	if pageRes.NextCursor != nil {
+		nextCursor = lo.ToPtr(pageRes.NextCursor.String())
+	}
+
+	res := dto.ListUsersResponse{
+		Users:      pageRes.Users,
+		Limit:      page.Limit,
+		NextCursor: nextCursor,
+	}
+
+	return &res, nil
 }
 
 // CreateNewUser creates a new user
@@ -118,56 +179,58 @@ func (s *service) CreateNewUsers(ctx context.Context, req dto.CreateUsersRequest
 	return res, nil
 }
 
-// GetUser finds a user by its id
-func (s *service) GetUser(ctx context.Context, userId uuid.UUID) (*models.User, error) {
-	logger := log.Ctx(ctx).With().Str("user_id", userId.String()).Logger()
-
-	logger.Info().Msg("retrieving a new user...")
-
-	// retrieve from repo
-	user, err := s.repo.FindByID(ctx, userId)
-	if err != nil {
-		return nil, apperror.ToAppError(err)
-	}
-
-	logger.Info().Msg("user found")
-
-	return user, nil
-}
-
-// ListUsers returns a list of users from a given cursor.
-//
-// It return a limited number of users set in the request.
-func (s *service) ListUsers(ctx context.Context, req dto.ListUsersRequest) (*dto.ListUsersResponse, error) {
+// UpdateUser updates user information
+func (s *service) UpdateUser(ctx context.Context, req dto.UpdateUserRequest) (models.User, error) {
 	logger := log.Ctx(ctx).With().Any("request", req).Logger()
 
-	logger.Info().Msg("listing user...")
+	logger.Info().Msg("updating the giving user...")
 
-	// parse request to repository page request
-	page, err := req.ToPage()
+	// validate input
+	if err := req.Validate(); err != nil {
+		return models.User{}, err
+	}
+
+	var res models.User
+	err := s.tm.Do(ctx, func(ctx context.Context) error {
+		// retrieve the user to update from repo
+		user, err := s.repo.FindByID(ctx, req.Id)
+		if err != nil {
+			return apperror.ToAppError(err)
+		}
+
+		if user == nil {
+			return ErrNilUser
+		}
+
+		// data to update.
+		// first keep old values
+		dataToUpdate := models.User{
+			ID:       req.Id,
+			Username: user.Username,
+			Email:    user.Email,
+		}
+
+		// set relevant attribute that need to be updated
+		if req.Username != "" {
+			dataToUpdate.Username = req.Username
+		}
+		if req.Email != "" {
+			dataToUpdate.Email = req.Email
+		}
+
+		// store updated parameters
+		updatedUser, err := s.repo.Update(ctx, dataToUpdate)
+		if err != nil {
+			return apperror.ToAppError(err)
+		}
+		res = updatedUser
+		return nil
+	})
 	if err != nil {
-		return nil, err
+		return models.User{}, err
 	}
 
-	// retrieve  users from repo
-	pageRes, err := s.repo.FindPaged(ctx, page)
-	if err != nil {
-		return nil, apperror.ToAppError(err)
-	}
+	logger.Info().Any("user_updated", res).Msg("user updated")
 
-	logger.Info().Msg("users found")
-
-	// set next page result if defined
-	var nextCursor *string
-	if pageRes.NextCursor != nil {
-		nextCursor = lo.ToPtr(pageRes.NextCursor.String())
-	}
-
-	res := dto.ListUsersResponse{
-		Users:      pageRes.Users,
-		Limit:      page.Limit,
-		NextCursor: nextCursor,
-	}
-
-	return &res, nil
+	return res, nil
 }

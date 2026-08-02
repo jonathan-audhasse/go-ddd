@@ -36,10 +36,16 @@ func NewRouter(services *application.Services) http.Handler {
 	r.Get("/health", healthHandler.IsHealthy)
 
 	r.Route("/users", func(r chi.Router) {
+		// create
 		r.Post("/", userHandler.CreateUser)
 		r.Post("/bulk", userHandler.CreateUsers)
+		// read
 		r.Get("/{id}", userHandler.GetUser)
 		r.Get("/", userHandler.ListUsers)
+		// update
+		r.Post("/{id}", userHandler.UpdateUser)
+		// delete
+		// r.Delete("/", userHandler.Delete)
 	})
 
 	return r

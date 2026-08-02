@@ -133,7 +133,7 @@ func TestUserRepository_Update_Unknown_User(t *testing.T) {
 
 	// update the new user
 	_, err := repo.Update(ctx, user)
-	require.Error(t, err)
+	assert.ErrorIs(t, err, repository.ErrFailedToUpdateUser)
 }
 
 func TestUserRepository_Update(t *testing.T) {

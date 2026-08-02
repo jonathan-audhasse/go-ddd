@@ -135,6 +135,7 @@ func (r *userRepository) FindByID(ctx context.Context, id uuid.UUID) (*models.Us
 	q := getQueries(ctx, r.pool)
 
 	row, err := q.GetUserByID(ctx, ToPgUUID(id))
+	// check if the error is not the `sql.ErrNoRows = "no rows in result set"`
 	if err != nil && err.Error() == noRowErrMessage {
 		logger.Err(err).Msg("user not found")
 		return nil, repository.ErrUserNotFound
@@ -219,6 +220,7 @@ func (r *userRepository) Update(ctx context.Context, user models.User) (models.U
 			}
 		}
 
+		// unknown error
 		return models.User{}, repository.ErrFailedToUpdateUser
 	}
 	res := toDomain(row)
